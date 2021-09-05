@@ -18,7 +18,9 @@ data class TrackerEvent(
     val psiPath: String,
     val editorLine: Int,
     val editorColumn: Int,
-    val task: String
+    val task: String,
+    val lineInstruction: String,
+    val currentLineCount: Int
 ) {
 
     enum class Type {
@@ -36,7 +38,7 @@ data class TrackerEvent(
         private val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
 
         fun ideNotInFocus(time: DateTime, userName: String, eventType: Type, eventData: String) =
-            TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "")
+            TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "", "", -1)
 
         fun CSVPrinter.printEvent(event: TrackerEvent) = event.apply {
             printRecord(
@@ -50,7 +52,9 @@ data class TrackerEvent(
                 psiPath,
                 editorLine,
                 editorColumn,
-                task
+                task,
+                lineInstruction,
+                currentLineCount
             )
         }
 
@@ -65,7 +69,9 @@ data class TrackerEvent(
             psiPath = this[7],
             editorLine = this[8].toInt(),
             editorColumn = this[9].toInt(),
-            task = if (size() < 11) "" else this[10] // backward compatibility with plugin data before 1.0.6 beta
+            task = if (size() < 11) "" else this[10], // backward compatibility with plugin data before 1.0.6 beta
+            lineInstruction = this[11],
+            currentLineCount = this[12].toInt()
         )
 
         fun parseDateTime(time: String): DateTime = DateTime.parse(time, dateTimeParseFormat.withZoneUTC())

@@ -21,6 +21,7 @@ import com.intellij.openapi.editor.impl.EditorComponentImpl
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.WindowManagerEx
@@ -95,7 +96,7 @@ class ActivityTracker(
         val userName = SystemProperties.getUserName()
         val durations = trackerCallDurations.joinToString(",")
         trackerCallDurations.clear()
-        return TrackerEvent(time, userName, Duration, durations, "", "", "", "", -1, -1, "")
+        return TrackerEvent(time, userName, Duration, durations, "", "", "", "", -1, -1, "", "", -1)
     }
 
     private fun startAWTEventListener(
@@ -211,18 +212,24 @@ class ActivityTracker(
             var line = -1
             var column = -1
             val editor = currentEditorIn(project)
+            var lineInstruction = ""
+            var currentLineCount = -1
             if (editor != null) {
                 // Keep full file name because projects and libraries might have files with the same names/partial paths.
                 val file = project.currentVirtualFile()
                 filePath = file?.path ?: ""
-                line = editor.caretModel.logicalPosition.line
+                line = editor.caretModel.logicalPosition.line + 1
                 column = editor.caretModel.logicalPosition.column
                 psiPath = psiPathProvider.psiPath(project, editor) ?: ""
+
+                val range = TextRange(editor.caretModel.visualLineStart, editor.caretModel.visualLineEnd)
+                lineInstruction = editor.markupModel.document.getText(range)
+                currentLineCount = editor.document.lineCount
             }
 
             val task = taskNameProvider.taskName(project)
 
-            return TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column, task)
+            return TrackerEvent(time, userName, eventType, eventData, project.name, focusOwnerId, filePath, psiPath, line, column, task, lineInstruction, currentLineCount)
 
         } catch (e: Exception) {
             log(e, NotificationType.ERROR)
