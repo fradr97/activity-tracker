@@ -1,8 +1,10 @@
 package activitytracker
 
-import activitytracker.Plugin.Companion.pluginId
 import activitytracker.EventAnalyzer.Result.*
+import activitytracker.Plugin.Companion.pluginId
 import activitytracker.liveplugin.*
+import activitytracker.locAlgorithm.ProcessPluginOutput
+import activitytracker.locAlgorithm.gui.TextHighlightAttention
 import com.intellij.CommonBundle
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.RevealFileAction
@@ -10,21 +12,26 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.extensions.Extensions
 import com.intellij.openapi.extensions.LoadingOrder
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.showOkCancelDialog
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.openapi.wm.StatusBar
-import com.intellij.openapi.wm.StatusBarWidget
-import com.intellij.openapi.wm.StatusBarWidgetFactory
+import com.intellij.openapi.util.IconLoader
+import com.intellij.openapi.wm.*
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.Consumer
 import java.awt.Component
 import java.awt.Point
 import java.awt.event.MouseEvent
+import java.util.*
+import javax.swing.Icon
+
 
 class PluginUI(
     private val plugin: Plugin,
@@ -37,10 +44,15 @@ class PluginUI(
     private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
     private val widgetId = "Activity Tracker Widget"
 
+    private var isMonitoring = false
+    private var isButtonHighlightActive = false
+
     fun init(): PluginUI {
         plugin.setUI(this)
         registerWidget(parentDisposable)
         registerPopup(parentDisposable)
+        registerButtonStartMonitoring(parentDisposable)
+        registerButtonHighlightLines(parentDisposable)
         eventAnalyzer.runner = { task ->
             runInBackground("Analyzing activity log", task = { task() })
         }
@@ -59,6 +71,123 @@ class PluginUI(
                 createListPopup(it.dataContext).showCenteredInCurrentWindow(project)
             }
         })
+    }
+
+    private fun registerButtonStartMonitoring(parentDisposable: Disposable) {
+        var icon: Icon?
+
+        val buttonStartMonitoring = object: AnAction("Start Monitoring"), DumbAware {
+            override fun actionPerformed(event: AnActionEvent) {
+                val project: Project? = event.getData(PlatformDataKeys.PROJECT)
+
+                plugin.toggleTracking()
+                if(isMonitoring) {
+                    Thread.sleep(3000);
+                    isMonitoring = false
+                    isButtonHighlightActive = true
+                }
+                else {
+                    if (project != null) {
+                        removeHighlightLines(project)
+                        isMonitoring = true
+                        isButtonHighlightActive = false
+                    }
+                }
+            }
+            override fun update(event: AnActionEvent) {
+                event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
+                icon = if(isMonitoring) {
+                    IconLoader.getIcon("AllIcons.Actions.Pause")
+                } else {
+                    IconLoader.getIcon("AllIcons.Debugger.Db_set_breakpoint")
+                }
+                event.presentation.icon = icon
+            }
+        }
+        registerAction("Start Monitoring", "", "ToolbarRunGroup", "Start/Stop Monitoring", parentDisposable, buttonStartMonitoring)
+    }
+
+    private fun registerButtonHighlightLines(parentDisposable: Disposable) {
+        var icon: Icon
+
+        val buttonHighlight = object: AnAction("Start Monitoring"), DumbAware {
+            override fun actionPerformed(event: AnActionEvent) {
+                if(!isMonitoring && isButtonHighlightActive) {
+                    val project: Project? = event.getData(PlatformDataKeys.PROJECT)
+
+                    if (project == null) {
+                        val title = "No project selected!"
+                        val report = "Select a Project!"
+                        Messages.showInfoMessage(title, report)
+                    } else {
+                        val editorManager = FileEditorManager.getInstance(project)
+                        val editor = editorManager.selectedTextEditor
+                        if (editor == null) {
+                            val title = "No file selected!"
+                            val report = "Select a File!"
+                            Messages.showInfoMessage(title, report)
+                        } else {
+                            val document = Objects.requireNonNull(editor).document
+                            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
+                            if (psiFile == null) {
+                                val title = "No file selected!"
+                                val report = "Select a File!"
+                                Messages.showInfoMessage(title, report)
+                            } else {
+                                val virtualFile = psiFile.originalFile.virtualFile
+                                val path = virtualFile.path
+                                val processPluginOutput = ProcessPluginOutput()
+                                processPluginOutput.createPluginOutput(path)
+                                processPluginOutput.getHighlightedAttentionLines(document, editor, path)
+                            }
+                        }
+                    }
+                    isButtonHighlightActive = false
+                }
+                else if(!isMonitoring && !isButtonHighlightActive) {
+                    val project: Project? = event.getData(PlatformDataKeys.PROJECT)
+                    if (project == null) {
+                        val title = "No project selected!"
+                        val report = "Select a Project!"
+                        Messages.showInfoMessage(title, report)
+                    }
+                    else {
+                        removeHighlightLines(project)
+                        isButtonHighlightActive = true
+                    }
+                }
+            }
+            override fun update(event: AnActionEvent) {
+                icon = if(isButtonHighlightActive) {
+                    IconLoader.getIcon("AllIcons.Actions.Colors")
+                } else {
+                    IconLoader.getIcon("AllIcons.Actions.Cancel")
+                }
+                event.presentation.icon = icon
+            }
+        }
+        registerAction("Highlight Lines", "", "ToolbarRunGroup", "Highlight Lines", parentDisposable, buttonHighlight)
+    }
+
+    private fun removeHighlightLines(project: Project) {
+        val editorManager = FileEditorManager.getInstance(project)
+        val editor = editorManager.selectedTextEditor
+        if (editor == null) {
+            val title = "No file selected!"
+            val report = "Select a File!"
+            Messages.showInfoMessage(title, report)
+        } else {
+            val document = Objects.requireNonNull(editor).document
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
+            if (psiFile == null) {
+                val title = "No file selected!"
+                val report = "Select a File!"
+                Messages.showInfoMessage(title, report)
+            } else {
+                val textHighlightAttention = TextHighlightAttention()
+                textHighlightAttention.removeAllHighlighter(editor)
+            }
+        }
     }
 
     private fun registerWidget(parentDisposable: Disposable) {
@@ -193,13 +322,13 @@ class PluginUI(
             override fun actionPerformed(event: AnActionEvent) = BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
         }
 
-        registerAction("Start/Stop Activity Tracking", action = toggleTracking)
+        //registerAction("Start/Stop Activity Tracking", action = toggleTracking)
         registerAction("Roll Tracking Log", action = rollCurrentLog)
         registerAction("Clear Tracking Log", action = clearCurrentLog)
         // TODO register other actions
 
         return DefaultActionGroup().apply {
-            add(toggleTracking)
+            //add(toggleTracking)
             add(DefaultActionGroup("Current Log", true).apply {
                 add(showStatistics)
                 add(openLogInIde)
@@ -208,13 +337,13 @@ class PluginUI(
                 add(rollCurrentLog)
                 add(clearCurrentLog)
             })
-            addSeparator()
+            /*addSeparator()
             add(DefaultActionGroup("Settings", true).apply {
                 add(toggleTrackActions)
                 add(togglePollIdeState)
                 add(toggleTrackKeyboard)
                 add(toggleTrackMouse)
-            })
+            })*/
             add(openHelp)
         }
     }

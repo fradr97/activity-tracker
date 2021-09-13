@@ -241,6 +241,11 @@ class ActivityTracker(
         }
     }
 
+    /*private fun getAttention(): Int {
+        val random = Random()
+        return random.nextInt(10) + 1
+    }*/
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> findParentComponent(component: Component?, matches: (Component) -> Boolean): T? =
         when {

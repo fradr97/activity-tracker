@@ -94,7 +94,7 @@ class Plugin(
 
         companion object {
             val defaultValue = State(
-                isTracking = true,
+                isTracking = false,
                 pollIdeState = true,
                 pollIdeStateMs = 1000,
                 trackIdeActions = true,

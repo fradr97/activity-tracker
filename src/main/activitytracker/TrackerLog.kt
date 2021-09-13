@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.text.Charsets.UTF_8
 
-class TrackerLog(private val eventsFilePath: String) {
+class TrackerLog(private val eventsFilePath: String, private val monitoringAttentionFilePath: String) {
     private val log = Logger.getInstance(TrackerLog::class.java)
     private val eventQueue: Queue<TrackerEvent> = ConcurrentLinkedQueue()
 
@@ -54,7 +54,7 @@ class TrackerLog(private val eventsFilePath: String) {
         eventQueue.add(event)
     }
 
-    fun clearLog(): Boolean = FileUtil.delete(File(eventsFilePath))
+    fun clearLog(): Boolean = FileUtil.delete(File(eventsFilePath)) && FileUtil.delete(File(monitoringAttentionFilePath))
 
     fun readEvents(onParseError: (String, Exception) -> Any): Sequence<TrackerEvent> {
         val reader = File(eventsFilePath).bufferedReader(UTF_8)

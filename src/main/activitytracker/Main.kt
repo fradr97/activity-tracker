@@ -13,7 +13,8 @@ class Main: AppLifecycleListener {
     override fun appFrameCreated(commandLineArgs: List<String>) {
         val application = ApplicationManager.getApplication()
         val pathToTrackingLogFile = "${PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
-        val trackerLog = TrackerLog(pathToTrackingLogFile).initWriter(parentDisposable = application, writeFrequencyMs = 10000L)
+        val pathToMonitoringAttentionLogFile = "${PathManager.getPluginsPath()}/activity-tracker/ide-events-attention.csv"
+        val trackerLog = TrackerLog(pathToTrackingLogFile, pathToMonitoringAttentionLogFile).initWriter(parentDisposable = application, writeFrequencyMs = 10000L)
         val tracker = ActivityTracker(
             CompilationTracker.instance,
             PsiPathProvider.instance,
