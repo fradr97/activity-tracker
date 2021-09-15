@@ -10,7 +10,6 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.RevealFileAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
-import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.Extensions
 import com.intellij.openapi.extensions.LoadingOrder
@@ -44,7 +43,6 @@ class PluginUI(
     private val widgetId = "Activity Tracker Widget"
     private val processPluginOutput = ProcessPluginOutput()
 
-    private var isMonitoring = false
     private var isButtonHighlightActive = false
 
     fun init(): PluginUI {
@@ -78,21 +76,19 @@ class PluginUI(
 
         val buttonStartStopMonitoring = object: AnAction("Start/Stop Monitoring"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
-                plugin.toggleTracking()
-                if(isMonitoring) {
+                isButtonHighlightActive = if(state.isTracking) {
                     Thread.sleep(5000)
-                    check(event, 0)
-                    isMonitoring = false
-                    isButtonHighlightActive = true
-                }
-                else {
-                    check(event, 2)
-                    isMonitoring = true
-                    isButtonHighlightActive = false
+                    plugin.toggleTracking()
+                    monitoringOperations(event, createAttentionDataset)
+                    true
+                } else {
+                    monitoringOperations(event, removeHighlightedLines)
+                    plugin.toggleTracking()
+                    false
                 }
             }
             override fun update(event: AnActionEvent) {
-                icon = if(isMonitoring) {
+                icon = if(state.isTracking) {
                     IconLoader.getIcon("AllIcons.Actions.Pause")
                 } else {
                     IconLoader.getIcon("AllIcons.Debugger.Db_set_breakpoint")
@@ -109,12 +105,12 @@ class PluginUI(
 
         val buttonHighlight = object: AnAction("Highlight Lines"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
-                if(!isMonitoring && isButtonHighlightActive) {
-                    check(event, 1)
+                if(!state.isTracking && isButtonHighlightActive) {
+                    monitoringOperations(event, highlightLines)
                     isButtonHighlightActive = false
                 }
-                else if(!isMonitoring && !isButtonHighlightActive) {
-                    check(event, 2)
+                else if(!state.isTracking && !isButtonHighlightActive) {
+                    monitoringOperations(event, removeHighlightedLines)
                     isButtonHighlightActive = true
                 }
             }
@@ -131,7 +127,7 @@ class PluginUI(
             "Highlight Lines", parentDisposable, buttonHighlight)
     }
 
-    private fun check(event: AnActionEvent, operation: Int) {
+    private fun monitoringOperations(event: AnActionEvent, operation: Int) {
         val project: Project? = event.getData(PlatformDataKeys.PROJECT)
 
         val messageTitle = "No project or file selected!"
@@ -212,7 +208,7 @@ class PluginUI(
         )
 
     private fun createActionGroup(): DefaultActionGroup {
-        val toggleTracking = object: AnAction(), DumbAware {
+        /*val toggleTracking = object: AnAction(), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.toggleTracking()
             override fun update(event: AnActionEvent) {
                 event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
@@ -233,7 +229,7 @@ class PluginUI(
         val toggleTrackMouse = object: CheckboxAction("Track Mouse") {
             override fun isSelected(event: AnActionEvent) = state.trackMouse
             override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
-        }
+        }*/
         val openLogInIde = object: AnAction("Open in IDE"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFile(event.project)
         }
@@ -326,5 +322,11 @@ class PluginUI(
             })*/
             add(openHelp)
         }
+    }
+
+    companion object {
+        const val createAttentionDataset = 0
+        const val highlightLines = 1
+        const val removeHighlightedLines = 2
     }
 }

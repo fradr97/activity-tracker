@@ -109,6 +109,7 @@ class ProcessPluginOutput {
                     }
                 }
                 else -> {
+                    deleteEmptyInstructionLines(list[i][LINE_INSTRUCTION], list[i][LINE].toInt(), newOutput)
                 }
             }
         }
