@@ -22,7 +22,7 @@ class ProcessPluginOutput {
             pluginDataset = updateLineNumbers(trackerOutput)
             deleteEmptyInstructionOutput()
             mergeAttentionValues()
-            fileParser.writeFile(DATASET_FILENAME, pluginDataset, true)
+            fileParser.writeFile(DATASET_FILENAME, pluginDataset, false)
         } else {
             val report = "No tracking activity detected."
             val title = "Tracker File Empty!"

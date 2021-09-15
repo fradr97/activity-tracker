@@ -19,7 +19,7 @@ class TextHighlightAttention {
             color.getBlue(), null
         )
         val gHue = 1 / 3f
-        val highlight = Color.getHSBColor(hsbVals[0], hsbVals[1],10f)
+        val highlight = Color.getHSBColor(hsbVals[0], hsbVals[1] + (attentionValue * 100 / 10), hsbVals[1])
         val shadow = Color.getHSBColor(hsbVals[0], hsbVals[1], attentionValue * 0.5f * hsbVals[2])
         val textattributes = TextAttributes(null, color, null, EffectType.LINE_UNDERSCORE, Font.PLAIN)
         editor.markupModel.addLineHighlighter(line - 1, HighlighterLayer.CARET_ROW, textattributes)

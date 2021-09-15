@@ -12,7 +12,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CheckboxAction
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.extensions.Extensions
 import com.intellij.openapi.extensions.LoadingOrder
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -43,6 +42,7 @@ class PluginUI(
     private var state = Plugin.State.defaultValue
     private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
     private val widgetId = "Activity Tracker Widget"
+    private val processPluginOutput = ProcessPluginOutput()
 
     private var isMonitoring = false
     private var isButtonHighlightActive = false
@@ -51,7 +51,7 @@ class PluginUI(
         plugin.setUI(this)
         registerWidget(parentDisposable)
         registerPopup(parentDisposable)
-        registerButtonStartMonitoring(parentDisposable)
+        registerButtonStartStopMonitoring(parentDisposable)
         registerButtonHighlightLines(parentDisposable)
         eventAnalyzer.runner = { task ->
             runInBackground("Analyzing activity log", task = { task() })
@@ -73,29 +73,25 @@ class PluginUI(
         })
     }
 
-    private fun registerButtonStartMonitoring(parentDisposable: Disposable) {
+    private fun registerButtonStartStopMonitoring(parentDisposable: Disposable) {
         var icon: Icon?
 
-        val buttonStartMonitoring = object: AnAction("Start Monitoring"), DumbAware {
+        val buttonStartStopMonitoring = object: AnAction("Start/Stop Monitoring"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
-                val project: Project? = event.getData(PlatformDataKeys.PROJECT)
-
                 plugin.toggleTracking()
                 if(isMonitoring) {
-                    Thread.sleep(3000);
+                    Thread.sleep(5000)
+                    check(event, 0)
                     isMonitoring = false
                     isButtonHighlightActive = true
                 }
                 else {
-                    if (project != null) {
-                        removeHighlightLines(project)
-                        isMonitoring = true
-                        isButtonHighlightActive = false
-                    }
+                    check(event, 2)
+                    isMonitoring = true
+                    isButtonHighlightActive = false
                 }
             }
             override fun update(event: AnActionEvent) {
-                event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
                 icon = if(isMonitoring) {
                     IconLoader.getIcon("AllIcons.Actions.Pause")
                 } else {
@@ -104,57 +100,22 @@ class PluginUI(
                 event.presentation.icon = icon
             }
         }
-        registerAction("Start Monitoring", "", "ToolbarRunGroup", "Start/Stop Monitoring", parentDisposable, buttonStartMonitoring)
+        registerAction("Start/Stop Monitoring", "", "ToolbarRunGroup",
+            "Start/Stop Monitoring", parentDisposable, buttonStartStopMonitoring)
     }
 
     private fun registerButtonHighlightLines(parentDisposable: Disposable) {
         var icon: Icon
 
-        val buttonHighlight = object: AnAction("Start Monitoring"), DumbAware {
+        val buttonHighlight = object: AnAction("Highlight Lines"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 if(!isMonitoring && isButtonHighlightActive) {
-                    val project: Project? = event.getData(PlatformDataKeys.PROJECT)
-
-                    if (project == null) {
-                        val title = "No project selected!"
-                        val report = "Select a Project!"
-                        Messages.showInfoMessage(title, report)
-                    } else {
-                        val editorManager = FileEditorManager.getInstance(project)
-                        val editor = editorManager.selectedTextEditor
-                        if (editor == null) {
-                            val title = "No file selected!"
-                            val report = "Select a File!"
-                            Messages.showInfoMessage(title, report)
-                        } else {
-                            val document = Objects.requireNonNull(editor).document
-                            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
-                            if (psiFile == null) {
-                                val title = "No file selected!"
-                                val report = "Select a File!"
-                                Messages.showInfoMessage(title, report)
-                            } else {
-                                val virtualFile = psiFile.originalFile.virtualFile
-                                val path = virtualFile.path
-                                val processPluginOutput = ProcessPluginOutput()
-                                processPluginOutput.createPluginOutput(path)
-                                processPluginOutput.getHighlightedAttentionLines(document, editor, path)
-                            }
-                        }
-                    }
+                    check(event, 1)
                     isButtonHighlightActive = false
                 }
                 else if(!isMonitoring && !isButtonHighlightActive) {
-                    val project: Project? = event.getData(PlatformDataKeys.PROJECT)
-                    if (project == null) {
-                        val title = "No project selected!"
-                        val report = "Select a Project!"
-                        Messages.showInfoMessage(title, report)
-                    }
-                    else {
-                        removeHighlightLines(project)
-                        isButtonHighlightActive = true
-                    }
+                    check(event, 2)
+                    isButtonHighlightActive = true
                 }
             }
             override fun update(event: AnActionEvent) {
@@ -166,26 +127,45 @@ class PluginUI(
                 event.presentation.icon = icon
             }
         }
-        registerAction("Highlight Lines", "", "ToolbarRunGroup", "Highlight Lines", parentDisposable, buttonHighlight)
+        registerAction("Highlight Lines", "", "ToolbarRunGroup",
+            "Highlight Lines", parentDisposable, buttonHighlight)
     }
 
-    private fun removeHighlightLines(project: Project) {
-        val editorManager = FileEditorManager.getInstance(project)
-        val editor = editorManager.selectedTextEditor
-        if (editor == null) {
-            val title = "No file selected!"
-            val report = "Select a File!"
-            Messages.showInfoMessage(title, report)
+    private fun check(event: AnActionEvent, operation: Int) {
+        val project: Project? = event.getData(PlatformDataKeys.PROJECT)
+
+        val messageTitle = "No project or file selected!"
+        val messageContent = "Select a Project and a File."
+
+        if (project == null) {
+            Messages.showInfoMessage(messageTitle, messageContent)
         } else {
-            val document = Objects.requireNonNull(editor).document
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
-            if (psiFile == null) {
-                val title = "No file selected!"
-                val report = "Select a File!"
-                Messages.showInfoMessage(title, report)
+            val editorManager = FileEditorManager.getInstance(project)
+            val editor = editorManager.selectedTextEditor
+            if (editor == null) {
+                Messages.showInfoMessage(messageTitle, messageContent)
             } else {
-                val textHighlightAttention = TextHighlightAttention()
-                textHighlightAttention.removeAllHighlighter(editor)
+                val document = Objects.requireNonNull(editor).document
+                val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
+                if (psiFile == null) {
+                    Messages.showInfoMessage(messageTitle, messageContent)
+                } else {
+                    val virtualFile = psiFile.originalFile.virtualFile
+                    val path = virtualFile.path
+
+                    when (operation) {
+                        0 -> {
+                            processPluginOutput.createPluginOutput(path)
+                        }
+                        1 -> {
+                            processPluginOutput.getHighlightedAttentionLines(document, editor, path)
+                        }
+                        2 -> {
+                            val textHighlightAttention = TextHighlightAttention()
+                            textHighlightAttention.removeAllHighlighter(editor)
+                        }
+                    }
+                }
             }
         }
     }

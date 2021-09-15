@@ -10,10 +10,6 @@ class StringUtils {
     }
 
     fun stripTrailing(string: String): String {
-        var i = string.length - 1
-        while (string[i].toString() == " ") {
-            i--
-        }
-        return string.substring(0, i + 1)
+        return string.replaceFirst("\\s++$".toRegex(), "")
     }
 }

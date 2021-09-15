@@ -92,8 +92,7 @@ class ProcessActivityTrackerOutput {
         val toRemove: MutableList<Array<String>> = ArrayList()
         for (atOutput in activityTrackerOutput!!) {
             if (atOutput[AT_EVENT] == "Start/Stop Activity Tracking" ||
-                atOutput[AT_EVENT] == "Start Monitoring" ||
-                atOutput[AT_EVENT] == "Stop Monitoring") {
+                atOutput[AT_EVENT] == "Start/Stop Monitoring") {
                 toRemove.add(atOutput)
             }
         }
