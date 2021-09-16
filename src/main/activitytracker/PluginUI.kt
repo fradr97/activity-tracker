@@ -77,7 +77,7 @@ class PluginUI(
         val buttonStartStopMonitoring = object: AnAction("Start/Stop Monitoring"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 isButtonHighlightActive = if(state.isTracking) {
-                    Thread.sleep(5000)
+                    Thread.sleep(sleep.toLong())
                     plugin.toggleTracking()
                     monitoringOperations(event, createAttentionDataset)
                     true
@@ -328,5 +328,6 @@ class PluginUI(
         const val createAttentionDataset = 0
         const val highlightLines = 1
         const val removeHighlightedLines = 2
+        const val sleep = 5000
     }
 }
