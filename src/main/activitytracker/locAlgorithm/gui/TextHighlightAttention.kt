@@ -13,16 +13,16 @@ class TextHighlightAttention {
         var color: Color? = null
         color =
             if (attentionValue < LOW_ATTENTION) JBColor.RED else if (attentionValue < MEDIUM_ATTENTION) JBColor.YELLOW else JBColor.GREEN
-        val hsbVals = Color.RGBtoHSB(
+        /*val hsbVals = Color.RGBtoHSB(
             color.getRed(),
             color.getGreen(),
             color.getBlue(), null
         )
         val gHue = 1 / 3f
         val highlight = Color.getHSBColor(hsbVals[0], hsbVals[1] + (attentionValue * 100 / 10), hsbVals[1])
-        val shadow = Color.getHSBColor(hsbVals[0], hsbVals[1], attentionValue * 0.5f * hsbVals[2])
-        val textattributes = TextAttributes(null, color, null, EffectType.LINE_UNDERSCORE, Font.PLAIN)
-        editor.markupModel.addLineHighlighter(line - 1, HighlighterLayer.CARET_ROW, textattributes)
+        val shadow = Color.getHSBColor(hsbVals[0], hsbVals[1], attentionValue * 0.5f * hsbVals[2])*/
+        val textAttributes = TextAttributes(null, color, null, EffectType.LINE_UNDERSCORE, Font.PLAIN)
+        editor.markupModel.addLineHighlighter(line - 1, HighlighterLayer.CARET_ROW, textAttributes)
     }
 
     fun removeAllHighlighter(editor: Editor) {

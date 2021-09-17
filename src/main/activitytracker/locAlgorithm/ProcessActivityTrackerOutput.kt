@@ -22,7 +22,7 @@ class ProcessActivityTrackerOutput {
         deleteATOutsideEditorEvents()
         deleteATEventsWithoutFilepath()
         deleteATEventsStartStopTracking()
-        deleteATDuplicateEvents()
+        manageSpecialEvents()
     }
 
     private fun getFileOnFocusEvents(fileOnFocus: String) {
@@ -102,22 +102,15 @@ class ProcessActivityTrackerOutput {
     }
 
     /**
-     * There are "duplicate" events in Activity Tracker: e.g. if I do "Enter",
-     * it generates an event with "EditorEnter" and one with the selected button (10:10:0).
-     * Collapse of events of this type taking as the (correct) CURRENT_LOC that of the second event.
+     * If I do "Enter" or "BackSpace", this method takes the next event as CURRENT_LOC (correct).
      */
-    private fun deleteATDuplicateEvents() {
+    private fun manageSpecialEvents() {
         val newList: MutableList<Array<String>> = ArrayList()
         var newLine: Array<String>
         for (i in activityTrackerOutput!!.indices) {
             newLine =
                 if (activityTrackerOutput!![i][AT_EVENT] == "EditorEnter" ||
-                    activityTrackerOutput!![i][AT_EVENT] == "EditorSplitLine" ||
-                    activityTrackerOutput!![i][AT_EVENT] == "EditorBackSpace" ||
-                    activityTrackerOutput!![i][AT_EVENT] == "EditorDelete" ||
-                    activityTrackerOutput!![i][AT_EVENT] == "EditorCut" ||
-                    activityTrackerOutput!![i][AT_EVENT] == "EditorPaste" ||
-                    activityTrackerOutput!![i][AT_EVENT] == "EditorCopy") {
+                    activityTrackerOutput!![i][AT_EVENT] == "EditorBackSpace") {
                     arrayOf(
                         activityTrackerOutput!![i][AT_TIMESTAMP],
                         activityTrackerOutput!![i][AT_EVENT_TYPE],
@@ -128,7 +121,6 @@ class ProcessActivityTrackerOutput {
                         activityTrackerOutput!![i][AT_LINE_INSTRUCTION],
                         activityTrackerOutput!![i + 1][AT_CURRENT_LINE_COUNT]
                     )
-                    //i ++; //If MouseTracker and KeyTracker events are also active
                 } else {
                     getNewATLine(activityTrackerOutput, i)
                 }

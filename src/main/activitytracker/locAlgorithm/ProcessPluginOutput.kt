@@ -44,7 +44,7 @@ class ProcessPluginOutput {
             val offsetLOC = currentLOC - previousLOC
             val currentNumberLine = list[i][LINE].toInt()
             when (list[i][EVENT]) {
-                "EditorEnter", "EditorSplitLine" ->
+                "EditorEnter" ->
                     if (isEventEndLine(list, i) || isEventEndLineMinusOne(list, i)) {
                         var k = 0
                         while (k < newOutput.size) {
@@ -96,16 +96,6 @@ class ProcessPluginOutput {
                             }
                             k++
                         }
-                    }
-                }
-                "EditorDelete" -> if (currentLOC < previousLOC) {
-                    var k = 0
-                    while (k < newOutput.size) {
-                        if (newOutput[k][LINE].toInt() > currentNumberLine) {
-                            newLine = this.createNewLine(newOutput, k, offsetLOC)
-                            newOutput[k] = newLine
-                        }
-                        k++
                     }
                 }
                 else -> {
@@ -247,7 +237,7 @@ class ProcessPluginOutput {
 
     /* Metodo provvisorio */
     private val randomAttention: Int
-        private get() {
+        get() {
             val r = Random()
             return r.nextInt(10) + 1
         }
