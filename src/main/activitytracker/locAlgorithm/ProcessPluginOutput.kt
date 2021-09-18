@@ -5,7 +5,6 @@ import activitytracker.locAlgorithm.utils.FileParser
 import activitytracker.locAlgorithm.utils.StringUtils
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.TextRange
 import java.util.*
 
@@ -13,7 +12,8 @@ class ProcessPluginOutput {
     private var pluginDataset: MutableList<Array<String>>
     private val processATOutput: ProcessActivityTrackerOutput
     private val stringUtils: StringUtils
-    fun createPluginOutput(fileOnFocus: String?) {
+
+    fun createPluginOutput(fileOnFocus: String?): Int {
         val fileParser = FileParser()
         val trackerOutput = processATOutput.getCleanedATOutput(
             fileOnFocus!!
@@ -23,26 +23,28 @@ class ProcessPluginOutput {
             deleteEmptyInstructionOutput()
             mergeAttentionValues()
             fileParser.writeFile(DATASET_FILENAME, pluginDataset, false)
-        } else {
-            val report = "No tracking activity detected."
-            val title = "Tracker File Empty!"
-            Messages.showInfoMessage(report, title)
+            return OK_CODE
         }
+        return NULL_CODE
     }
 
     private fun updateLineNumbers(list: List<Array<String>>): MutableList<Array<String>> {
         var newLine: Array<String>
         val newOutput: MutableList<Array<String>> = ArrayList()
+
         for (i in list.indices) {
             newLine = this.createNewLine(list, i)
             newOutput.add(newLine)
             val currentLOC = list[i][CURRENT_LINE_COUNT].toInt()
             var previousLOC = currentLOC
+
             if (i > 0) {
                 previousLOC = list[i - 1][CURRENT_LINE_COUNT].toInt()
             }
+
             val offsetLOC = currentLOC - previousLOC
             val currentNumberLine = list[i][LINE].toInt()
+
             when (list[i][EVENT]) {
                 "EditorEnter" ->
                     if (isEventEndLine(list, i) || isEventEndLineMinusOne(list, i)) {
@@ -170,9 +172,7 @@ class ProcessPluginOutput {
         }
     }
 
-    /**
-     * Lines without instruction are removed from plugin dataset.
-     */
+    /* Lines without instruction are removed from plugin dataset */
     private fun deleteEmptyInstructionOutput() {
         val toRemove: MutableList<Array<String>> = ArrayList()
         for (atOutput in pluginDataset) {
@@ -185,7 +185,10 @@ class ProcessPluginOutput {
         }
     }
 
-    fun getHighlightedAttentionLines(document: Document, editor: Editor, fileOnFocus: String) {
+    fun getHighlightedAttentionLines(document: Document, editor: Editor, fileOnFocus: String): Int {
+        val fileParser = FileParser()
+        val attentionValues = fileParser.parseCSVFile(DATASET_FILENAME) ?: return NULL_CODE
+
         val textHighlightAttention = TextHighlightAttention()
         for (i in 0 until document.lineCount) {
             val editorLineNumber = i + 1
@@ -194,7 +197,7 @@ class ProcessPluginOutput {
                 editor.document.getLineEndOffset(i)
             )
             if (editor.document.getText(range).trim { it <= ' ' } != "") {
-                val meanAttentionLine = getMeanLineAttention(fileOnFocus, editorLineNumber)
+                val meanAttentionLine = getMeanLineAttention(attentionValues, fileOnFocus, editorLineNumber)
                 if (meanAttentionLine > 0) textHighlightAttention.addLineHighlighter(
                     editor,
                     editorLineNumber,
@@ -202,12 +205,13 @@ class ProcessPluginOutput {
                 )
             }
         }
+        return OK_CODE
     }
 
-    private fun getMeanLineAttention(fileOnFocus: String, line: Int): Int {
+    private fun getMeanLineAttention(list: List<Array<String>>, fileOnFocus: String, line: Int): Int {
         var sum = 0
         var occurrences = 0
-        for (row in pluginDataset) {
+        for (row in list) {
             if (fileOnFocus == row[FILENAME] &&
                 line == row[LINE].toInt()
             ) {
@@ -215,10 +219,10 @@ class ProcessPluginOutput {
                 occurrences++
             }
         }
-        return if (occurrences == 0) 0 else sum / occurrences
+        return if (occurrences == 0) NULL_CODE else sum / occurrences
     }
 
-    /* Metodo provvisorio */
+    /* Provisional method */
     private fun mergeAttentionValues() {
         for (i in pluginDataset.indices) {
             val row = arrayOf(
@@ -229,13 +233,14 @@ class ProcessPluginOutput {
                 pluginDataset[i][LINE],
                 pluginDataset[i][COLUMN],
                 pluginDataset[i][LINE_INSTRUCTION],
-                pluginDataset[i][CURRENT_LINE_COUNT], randomAttention.toString()
+                pluginDataset[i][CURRENT_LINE_COUNT],
+                randomAttention.toString()
             )
             pluginDataset[i] = row
         }
     }
 
-    /* Metodo provvisorio */
+    /* Provisional method */
     private val randomAttention: Int
         get() {
             val r = Random()
@@ -244,6 +249,9 @@ class ProcessPluginOutput {
 
     companion object {
         private val DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events-attention.csv"
+
+        const val OK_CODE = 0
+        const val NULL_CODE = -1
 
         /* New indexes for the plugin dataset */
         const val TIMESTAMP = 0

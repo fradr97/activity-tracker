@@ -6,15 +6,13 @@ import java.util.ArrayList
 
 class ProcessActivityTrackerOutput {
     private lateinit var activityTrackerOutput: MutableList<Array<String>>
+
     fun getCleanedATOutput(fileOnFocus: String): List<Array<String>>? {
         val fileParser = FileParser()
-        activityTrackerOutput = fileParser.parseCSVFile(TRACKER_DATASET_FILENAME) as MutableList<Array<String>>
-        if (activityTrackerOutput != null) {
-            getFileOnFocusEvents(fileOnFocus)
-            cleanATOutput()
-            return activityTrackerOutput
-        }
-        return null
+        this.activityTrackerOutput = fileParser.parseCSVFile(TRACKER_DATASET_FILENAME) as MutableList<Array<String>>
+        getFileOnFocusEvents(fileOnFocus)
+        cleanATOutput()
+        return this.activityTrackerOutput
     }
 
     private fun cleanATOutput() {
@@ -27,13 +25,13 @@ class ProcessActivityTrackerOutput {
 
     private fun getFileOnFocusEvents(fileOnFocus: String) {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput!!) {
             if (atOutput[AT_FILENAME] != fileOnFocus) {
                 toRemove.add(atOutput)
             }
         }
         for (row in toRemove) {
-            activityTrackerOutput.remove(row)
+            this.activityTrackerOutput.remove(row)
         }
     }
 
@@ -42,13 +40,13 @@ class ProcessActivityTrackerOutput {
      */
     private fun deleteATInactiveEvents() {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput!!) {
             if (atOutput[AT_EVENT] == "Inactive") {
                 toRemove.add(atOutput)
             }
         }
         for (row in toRemove) {
-            activityTrackerOutput.remove(row)
+            this.activityTrackerOutput.remove(row)
         }
     }
 
@@ -57,13 +55,13 @@ class ProcessActivityTrackerOutput {
      */
     private fun deleteATOutsideEditorEvents() {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput!!) {
             if (atOutput[AT_FOCUS] != "Editor") {
                 toRemove.add(atOutput)
             }
         }
         for (row in toRemove) {
-            activityTrackerOutput.remove(row)
+            this.activityTrackerOutput.remove(row)
         }
     }
 
@@ -72,7 +70,7 @@ class ProcessActivityTrackerOutput {
      */
     private fun deleteATEventsWithoutFilepath() {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput!!) {
             try {
                 if (atOutput[AT_FILENAME] == "") {
                     toRemove.add(atOutput)
@@ -81,7 +79,7 @@ class ProcessActivityTrackerOutput {
             }
         }
         for (row in toRemove) {
-            activityTrackerOutput.remove(row)
+            this.activityTrackerOutput.remove(row)
         }
     }
 
@@ -90,14 +88,14 @@ class ProcessActivityTrackerOutput {
      */
     private fun deleteATEventsStartStopTracking() {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput!!) {
             if (atOutput[AT_EVENT] == "Start/Stop Activity Tracking" ||
                 atOutput[AT_EVENT] == "Start/Stop Monitoring") {
                 toRemove.add(atOutput)
             }
         }
         for (row in toRemove) {
-            activityTrackerOutput.remove(row)
+            this.activityTrackerOutput.remove(row)
         }
     }
 
@@ -107,26 +105,26 @@ class ProcessActivityTrackerOutput {
     private fun manageSpecialEvents() {
         val newList: MutableList<Array<String>> = ArrayList()
         var newLine: Array<String>
-        for (i in activityTrackerOutput!!.indices) {
+        for (i in this.activityTrackerOutput!!.indices) {
             newLine =
-                if (activityTrackerOutput!![i][AT_EVENT] == "EditorEnter" ||
-                    activityTrackerOutput!![i][AT_EVENT] == "EditorBackSpace") {
+                if (this.activityTrackerOutput!![i][AT_EVENT] == "EditorEnter" ||
+                    this.activityTrackerOutput!![i][AT_EVENT] == "EditorBackSpace") {
                     arrayOf(
-                        activityTrackerOutput!![i][AT_TIMESTAMP],
-                        activityTrackerOutput!![i][AT_EVENT_TYPE],
-                        activityTrackerOutput!![i][AT_EVENT],
-                        activityTrackerOutput!![i][AT_FILENAME],
-                        activityTrackerOutput!![i][AT_LINE],
-                        activityTrackerOutput!![i][AT_COLUMN],
-                        activityTrackerOutput!![i][AT_LINE_INSTRUCTION],
-                        activityTrackerOutput!![i + 1][AT_CURRENT_LINE_COUNT]
+                        this.activityTrackerOutput!![i][AT_TIMESTAMP],
+                        this.activityTrackerOutput!![i][AT_EVENT_TYPE],
+                        this.activityTrackerOutput!![i][AT_EVENT],
+                        this.activityTrackerOutput!![i][AT_FILENAME],
+                        this.activityTrackerOutput!![i][AT_LINE],
+                        this.activityTrackerOutput!![i][AT_COLUMN],
+                        this.activityTrackerOutput!![i][AT_LINE_INSTRUCTION],
+                        this.activityTrackerOutput!![i + 1][AT_CURRENT_LINE_COUNT]
                     )
                 } else {
-                    getNewATLine(activityTrackerOutput, i)
+                    getNewATLine(this.activityTrackerOutput, i)
                 }
             newList.add(newLine)
         }
-        activityTrackerOutput = newList
+        this.activityTrackerOutput = newList
     }
 
     private fun getNewATLine(list: List<Array<String>>?, index: Int): Array<String> {

@@ -11,6 +11,8 @@ import com.intellij.ide.actions.RevealFileAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.extensions.Extensions
 import com.intellij.openapi.extensions.LoadingOrder
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -43,7 +45,10 @@ class PluginUI(
     private val widgetId = "Activity Tracker Widget"
     private val processPluginOutput = ProcessPluginOutput()
 
-    private var isButtonHighlightActive = false
+    private lateinit var editor: Editor
+    private lateinit var document: Document
+    private var filePath: String = ""
+    private var isButtonHighlightActive = true
 
     fun init(): PluginUI {
         plugin.setUI(this)
@@ -76,15 +81,34 @@ class PluginUI(
 
         val buttonStartStopMonitoring = object: AnAction("Start/Stop Monitoring"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
-                isButtonHighlightActive = if(state.isTracking) {
-                    Thread.sleep(sleep.toLong())
-                    plugin.toggleTracking()
-                    monitoringOperations(event, createAttentionDataset)
-                    true
-                } else {
-                    monitoringOperations(event, removeHighlightedLines)
-                    plugin.toggleTracking()
-                    false
+                val check = checkProjectOrFile(event)
+
+                if (check == NULL_CODE) {
+                    if(state.isTracking) {
+                        plugin.toggleTracking()
+                        isButtonHighlightActive = true
+                    }
+                    else
+                        Messages.showErrorDialog(noProjectOrFileTitle, noProjectOrFileMessage)
+                }
+                else {
+                    if(state.isTracking) {
+                        Thread.sleep(sleep.toLong())
+                        plugin.toggleTracking()
+
+                        val op = monitoringOperations(document, editor, filePath, createAttentionDataset)
+
+                        isButtonHighlightActive = if(op == NULL_CODE) {
+                            Messages.showErrorDialog(noTrackingActivityMessage, noTrackingActivityTitle)
+                            false
+                        } else {
+                            true
+                        }
+                    } else {
+                        plugin.toggleTracking()
+                        monitoringOperations(document, editor, filePath, removeHighlightedLines)
+                        isButtonHighlightActive = false
+                    }
                 }
             }
             override fun update(event: AnActionEvent) {
@@ -105,13 +129,30 @@ class PluginUI(
 
         val buttonHighlight = object: AnAction("Highlight Lines"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
-                if(!state.isTracking && isButtonHighlightActive) {
-                    monitoringOperations(event, highlightLines)
-                    isButtonHighlightActive = false
+                val check = checkProjectOrFile(event)
+
+                if (check == NULL_CODE) {
+                    Messages.showErrorDialog(noProjectOrFileTitle, noProjectOrFileMessage)
                 }
-                else if(!state.isTracking && !isButtonHighlightActive) {
-                    monitoringOperations(event, removeHighlightedLines)
-                    isButtonHighlightActive = true
+                else {
+                    if(!state.isTracking && isButtonHighlightActive) {
+                        val op = monitoringOperations(document, editor, filePath, highlightLines)
+
+                        if(op == NULL_CODE)
+                            Messages.showErrorDialog(noTrackingActivityMessage, noTrackingActivityTitle)
+                        else {
+                            isButtonHighlightActive = false
+                        }
+                    }
+                    else if(!state.isTracking && !isButtonHighlightActive) {
+                        val op = monitoringOperations(document, editor, filePath, removeHighlightedLines)
+
+                        if(op == NULL_CODE)
+                            Messages.showErrorDialog(noTrackingActivityMessage, noTrackingActivityTitle)
+                        else {
+                            isButtonHighlightActive = true
+                        }
+                    }
                 }
             }
             override fun update(event: AnActionEvent) {
@@ -127,43 +168,46 @@ class PluginUI(
             "Highlight Lines", parentDisposable, buttonHighlight)
     }
 
-    private fun monitoringOperations(event: AnActionEvent, operation: Int) {
+    private fun checkProjectOrFile(event: AnActionEvent): Int {
         val project: Project? = event.getData(PlatformDataKeys.PROJECT)
 
-        val messageTitle = "No project or file selected!"
-        val messageContent = "Select a Project and a File."
-
         if (project == null) {
-            Messages.showInfoMessage(messageTitle, messageContent)
+            return NULL_CODE
         } else {
             val editorManager = FileEditorManager.getInstance(project)
-            val editor = editorManager.selectedTextEditor
-            if (editor == null) {
-                Messages.showInfoMessage(messageTitle, messageContent)
+            val selectedEditor = editorManager.selectedTextEditor
+            return if (selectedEditor == null) {
+                NULL_CODE
             } else {
-                val document = Objects.requireNonNull(editor).document
-                val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
+                val selectedDocument = Objects.requireNonNull(selectedEditor).document
+                val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(selectedDocument)
                 if (psiFile == null) {
-                    Messages.showInfoMessage(messageTitle, messageContent)
+                    NULL_CODE
                 } else {
-                    val virtualFile = psiFile.originalFile.virtualFile
-                    val path = virtualFile.path
-
-                    when (operation) {
-                        0 -> {
-                            processPluginOutput.createPluginOutput(path)
-                        }
-                        1 -> {
-                            processPluginOutput.getHighlightedAttentionLines(document, editor, path)
-                        }
-                        2 -> {
-                            val textHighlightAttention = TextHighlightAttention()
-                            textHighlightAttention.removeAllHighlighter(editor)
-                        }
-                    }
+                    this.editor = selectedEditor
+                    this.document = selectedDocument
+                    this.filePath = psiFile.originalFile.virtualFile.path
+                    OK_CODE
                 }
             }
         }
+    }
+
+    private fun monitoringOperations(document: Document, editor: Editor, path: String, operation: Int): Int {
+        when (operation) {
+            createAttentionDataset -> {
+                return processPluginOutput.createPluginOutput(path)
+            }
+            highlightLines -> {
+                return processPluginOutput.getHighlightedAttentionLines(document, editor, path)
+            }
+            removeHighlightedLines -> {
+                val textHighlightAttention = TextHighlightAttention()
+                textHighlightAttention.removeAllHighlighter(editor)
+                return OK_CODE
+            }
+        }
+        return NULL_CODE
     }
 
     private fun registerWidget(parentDisposable: Disposable) {
@@ -329,5 +373,11 @@ class PluginUI(
         const val highlightLines = 1
         const val removeHighlightedLines = 2
         const val sleep = 5000
+        const val noTrackingActivityMessage = "No tracking activity detected."
+        const val noTrackingActivityTitle = "Tracker File Empty!"
+        const val noProjectOrFileMessage = "No project or file selected!"
+        const val noProjectOrFileTitle = "Select a Project and a File."
+        const val OK_CODE = 0
+        const val NULL_CODE = -1
     }
 }
