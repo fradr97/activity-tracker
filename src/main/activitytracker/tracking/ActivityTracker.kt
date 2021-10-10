@@ -92,7 +92,8 @@ class ActivityTracker(
     private fun trackerCallDurationsEvent(): TrackerEvent? {
         if (!logTrackerCallDuration || trackerCallDurations.size < 10) return null
 
-        val time = DateTime.now()
+        val timestamp = DateTime.now()
+        val time = timestamp.toString().replace("T", " ").replace("+02:00", "")
         val userName = SystemProperties.getUserName()
         val durations = trackerCallDurations.joinToString(",")
         trackerCallDurations.clear()
@@ -168,7 +169,8 @@ class ActivityTracker(
             if (eventType == IdeState) {
                 eventData = "Inactive"
             }
-            val time = DateTime.now()
+            val timestamp = DateTime.now()
+            val time = timestamp.toString().replace("T", " ").replace("+02:00", "")
             val userName = SystemProperties.getUserName()
 
             val ideFocusManager = IdeFocusManager.getGlobalInstance()

@@ -244,7 +244,7 @@ class ProcessPluginOutput {
     private val randomAttention: Int
         get() {
             val r = Random()
-            return r.nextInt(10) + 1
+            return r.nextInt(100) + 1
         }
 
     companion object {

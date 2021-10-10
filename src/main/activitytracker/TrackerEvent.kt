@@ -8,7 +8,7 @@ import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormatterBuilder
 
 data class TrackerEvent(
-    val time: DateTime,
+    val time: String,
     val userName: String,
     val type: Type,
     val data: String,
@@ -35,14 +35,14 @@ data class TrackerEvent(
 
     companion object {
         private val dateTimeParseFormat: DateTimeFormatter = createDateTimeParseFormat()
-        private val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
+        //private val dateTimePrintFormat: DateTimeFormatter = createDateTimePrintFormat()
 
-        fun ideNotInFocus(time: DateTime, userName: String, eventType: Type, eventData: String) =
+        fun ideNotInFocus(time: String, userName: String, eventType: Type, eventData: String) =
             TrackerEvent(time, userName, eventType, eventData, "", "", "", "", -1, -1, "", "", -1)
 
         fun CSVPrinter.printEvent(event: TrackerEvent) = event.apply {
             printRecord(
-                dateTimePrintFormat.print(time),
+                time, //dateTimePrintFormat.print(time),
                 userName,
                 type,
                 data,
@@ -59,7 +59,7 @@ data class TrackerEvent(
         }
 
         fun CSVRecord.toTrackerEvent() = TrackerEvent(
-            time = parseDateTime(this[0]),
+            time = this[0],     //parseDateTime(this[0]),
             userName = this[1],
             type = Type.valueOf(this[2]),
             data = this[3],
