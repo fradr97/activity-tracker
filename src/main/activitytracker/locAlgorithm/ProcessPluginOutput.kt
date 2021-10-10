@@ -1,5 +1,6 @@
 package activitytracker.locAlgorithm
 
+import activitytracker.locAlgorithm.activityTrackerOutput.ProcessActivityTrackerOutput
 import activitytracker.locAlgorithm.gui.TextHighlightAttention
 import activitytracker.locAlgorithm.utils.FileParser
 import activitytracker.locAlgorithm.utils.StringUtils
@@ -263,6 +264,10 @@ class ProcessPluginOutput {
         const val LINE_INSTRUCTION = 6
         const val CURRENT_LINE_COUNT = 7
         const val ATTENTION = 8
+
+        /* Indexes for the attention list */
+        const val NEUROSKY_TIMESTAMP = 0
+        const val NEUROSKY_ATTENTION = 1
     }
 
     init {

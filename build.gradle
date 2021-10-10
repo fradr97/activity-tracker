@@ -24,6 +24,7 @@ dependencies {
 	compile "org.apache.commons:commons-csv:1.8"
 	testCompile "junit:junit:4.11" // also includes hamcrest-core
 	implementation group: 'com.opencsv', name: 'opencsv', version: '5.5.1'
+	implementation group: 'org.json', name: 'json', version: '20210307'
 }
 
 sourceSets {

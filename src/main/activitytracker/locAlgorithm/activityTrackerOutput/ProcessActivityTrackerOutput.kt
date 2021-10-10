@@ -1,4 +1,4 @@
-package activitytracker.locAlgorithm
+package activitytracker.locAlgorithm.activityTrackerOutput
 
 import activitytracker.locAlgorithm.utils.FileParser
 import java.lang.ArrayIndexOutOfBoundsException
