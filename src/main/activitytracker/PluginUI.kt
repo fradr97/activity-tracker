@@ -5,6 +5,8 @@ import activitytracker.Plugin.Companion.pluginId
 import activitytracker.liveplugin.*
 import activitytracker.locAlgorithm.ProcessPluginOutput
 import activitytracker.locAlgorithm.gui.TextHighlightAttention
+import activitytracker.locAlgorithm.neuroSkyAttention.NeuroSkyAttention
+import activitytracker.locAlgorithm.utils.FileParser
 import com.intellij.CommonBundle
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.RevealFileAction
@@ -87,6 +89,7 @@ class PluginUI(
                     if(state.isTracking) {
                         plugin.toggleTracking()
                         isButtonHighlightActive = true
+                        Variables.neuroSkyAttention.stopConnection()
                     }
                     else
                         Messages.showErrorDialog(noProjectOrFileTitle, noProjectOrFileMessage)
@@ -95,6 +98,11 @@ class PluginUI(
                     if(state.isTracking) {
                         Thread.sleep(sleep.toLong())
                         plugin.toggleTracking()
+                        Variables.neuroSkyAttention.stopConnection()
+
+                        val fileParser = FileParser()
+                        fileParser.writeFile("${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv",
+                            Variables.attentionList as MutableList<Array<String>>, false)
 
                         val op = monitoringOperations(document, editor, filePath, createAttentionDataset)
 
@@ -105,9 +113,20 @@ class PluginUI(
                             true
                         }
                     } else {
-                        plugin.toggleTracking()
-                        monitoringOperations(document, editor, filePath, removeHighlightedLines)
-                        isButtonHighlightActive = false
+                        Messages.showMessageDialog("Waiting!", "Waiting Neurosky ...", null)
+                        val isStarted: Boolean = Variables.neuroSkyAttention.waitForStarting()
+
+                        if (isStarted) {
+                            Messages.showMessageDialog("Running!", "Neurosky Is Running ...", null)
+                            val attentionThread = Thread(AttentionThread())
+                            attentionThread.start()
+
+                            plugin.toggleTracking()
+                            monitoringOperations(document, editor, filePath, removeHighlightedLines)
+                            isButtonHighlightActive = false
+                        } else {
+                            Messages.showErrorDialog("Neurosky not working!", "Neurosky Not Working!")
+                        }
                     }
                 }
             }
@@ -379,5 +398,16 @@ class PluginUI(
         const val noProjectOrFileTitle = "Select a Project and a File."
         const val OK_CODE = 0
         const val NULL_CODE = -1
+    }
+
+    object Variables {
+        val neuroSkyAttention = NeuroSkyAttention()
+        var attentionList: MutableList<Array<String>>? = null
+    }
+
+    class AttentionThread : Runnable {
+        override fun run() {
+            Variables.attentionList = Variables.neuroSkyAttention.attention
+        }
     }
 }

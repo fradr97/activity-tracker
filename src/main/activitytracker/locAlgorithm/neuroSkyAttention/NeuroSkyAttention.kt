@@ -3,7 +3,6 @@ package activitytracker.locAlgorithm.neuroSkyAttention
 import org.joda.time.DateTime
 import org.json.JSONObject
 import java.io.IOException
-import java.util.*
 
 open class NeuroSkyAttention {
     private val thinkGearSocketClient: ThinkGearSocketClient = ThinkGearSocketClient()
@@ -33,7 +32,7 @@ open class NeuroSkyAttention {
         return timer < WAITING_TIME && isStarted
     }
 
-    val attention: List<Array<String>>?
+    val attention: MutableList<Array<String>>?
         get() {
             var attention: Int
             val list: MutableList<Array<String>> = ArrayList()
@@ -65,7 +64,6 @@ open class NeuroSkyAttention {
             try {
                 while (!isStarted && timer < WAITING_TIME) {
                     timer++
-                    println(timer)
                     Thread.sleep(1000)
                 }
             } catch (e: InterruptedException) {
