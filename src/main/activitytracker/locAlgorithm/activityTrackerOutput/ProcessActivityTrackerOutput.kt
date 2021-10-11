@@ -7,15 +7,15 @@ import java.util.ArrayList
 class ProcessActivityTrackerOutput {
     private lateinit var activityTrackerOutput: MutableList<Array<String>>
 
-    fun getCleanedATOutput(fileOnFocus: String): List<Array<String>>? {
+    fun getCleanedATOutput(activityTrackerDateset: String, fileOnFocus: String): List<Array<String>> {
         val fileParser = FileParser()
-        this.activityTrackerOutput = fileParser.parseCSVFile(TRACKER_DATASET_FILENAME) as MutableList<Array<String>>
-        getFileOnFocusEvents(fileOnFocus)
-        cleanATOutput()
+        this.activityTrackerOutput = fileParser.parseCSVFile(activityTrackerDateset) as MutableList<Array<String>>
+        this.cleanATOutput(fileOnFocus)
         return this.activityTrackerOutput
     }
 
-    private fun cleanATOutput() {
+    private fun cleanATOutput(fileOnFocus: String) {
+        getFileOnFocusEvents(fileOnFocus)
         deleteATInactiveEvents()
         deleteATOutsideEditorEvents()
         deleteATEventsWithoutFilepath()
@@ -25,7 +25,7 @@ class ProcessActivityTrackerOutput {
 
     private fun getFileOnFocusEvents(fileOnFocus: String) {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in this.activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput) {
             if (atOutput[AT_FILENAME] != fileOnFocus) {
                 toRemove.add(atOutput)
             }
@@ -35,12 +35,10 @@ class ProcessActivityTrackerOutput {
         }
     }
 
-    /**
-     * "Inactive" events are suppressed.
-     */
+    /* "Inactive" events are removed */
     private fun deleteATInactiveEvents() {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in this.activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput) {
             if (atOutput[AT_EVENT] == "Inactive") {
                 toRemove.add(atOutput)
             }
@@ -50,12 +48,10 @@ class ProcessActivityTrackerOutput {
         }
     }
 
-    /**
-     * Events where the focus is not on the Editor are removed
-     */
+    /* Events where the focus is not on the Editor are removed */
     private fun deleteATOutsideEditorEvents() {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in this.activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput) {
             if (atOutput[AT_FOCUS] != "Editor") {
                 toRemove.add(atOutput)
             }
@@ -65,12 +61,10 @@ class ProcessActivityTrackerOutput {
         }
     }
 
-    /**
-     * Events without filepath are suppressed.
-     */
+    /* Events without filepath are removed */
     private fun deleteATEventsWithoutFilepath() {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in this.activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput) {
             try {
                 if (atOutput[AT_FILENAME] == "") {
                     toRemove.add(atOutput)
@@ -83,12 +77,10 @@ class ProcessActivityTrackerOutput {
         }
     }
 
-    /**
-     * Events named 'Start/Stop Activity Tracking' are suppressed.
-     */
+    /* Events named 'Start/Stop Activity Tracking' and 'Start/Stop Monitoring' are removed */
     private fun deleteATEventsStartStopTracking() {
         val toRemove: MutableList<Array<String>> = ArrayList()
-        for (atOutput in this.activityTrackerOutput!!) {
+        for (atOutput in this.activityTrackerOutput) {
             if (atOutput[AT_EVENT] == "Start/Stop Activity Tracking" ||
                 atOutput[AT_EVENT] == "Start/Stop Monitoring") {
                 toRemove.add(atOutput)
@@ -99,25 +91,23 @@ class ProcessActivityTrackerOutput {
         }
     }
 
-    /**
-     * If I do "Enter" or "BackSpace", this method takes the next event as CURRENT_LOC (correct).
-     */
+    /* If I do "Enter" or "BackSpace", this method takes the next event as CURRENT_LOC (correct) */
     private fun manageSpecialEvents() {
         val newList: MutableList<Array<String>> = ArrayList()
         var newLine: Array<String>
-        for (i in this.activityTrackerOutput!!.indices) {
+        for (i in this.activityTrackerOutput.indices) {
             newLine =
-                if (this.activityTrackerOutput!![i][AT_EVENT] == "EditorEnter" ||
-                    this.activityTrackerOutput!![i][AT_EVENT] == "EditorBackSpace") {
+                if (this.activityTrackerOutput[i][AT_EVENT] == "EditorEnter" ||
+                    this.activityTrackerOutput[i][AT_EVENT] == "EditorBackSpace") {
                     arrayOf(
-                        this.activityTrackerOutput!![i][AT_TIMESTAMP],
-                        this.activityTrackerOutput!![i][AT_EVENT_TYPE],
-                        this.activityTrackerOutput!![i][AT_EVENT],
-                        this.activityTrackerOutput!![i][AT_FILENAME],
-                        this.activityTrackerOutput!![i][AT_LINE],
-                        this.activityTrackerOutput!![i][AT_COLUMN],
-                        this.activityTrackerOutput!![i][AT_LINE_INSTRUCTION],
-                        this.activityTrackerOutput!![i + 1][AT_CURRENT_LINE_COUNT]
+                        this.activityTrackerOutput[i][AT_TIMESTAMP],
+                        this.activityTrackerOutput[i][AT_EVENT_TYPE],
+                        this.activityTrackerOutput[i][AT_EVENT],
+                        this.activityTrackerOutput[i][AT_FILENAME],
+                        this.activityTrackerOutput[i][AT_LINE],
+                        this.activityTrackerOutput[i][AT_COLUMN],
+                        this.activityTrackerOutput[i][AT_LINE_INSTRUCTION],
+                        this.activityTrackerOutput[i + 1][AT_CURRENT_LINE_COUNT]
                     )
                 } else {
                     getNewATLine(this.activityTrackerOutput, i)
@@ -141,8 +131,6 @@ class ProcessActivityTrackerOutput {
     }
 
     companion object {
-        private val TRACKER_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
-
         /* Activity Tracker dataset indexes */
         private const val AT_TIMESTAMP = 0
         private const val AT_EVENT_TYPE = 2

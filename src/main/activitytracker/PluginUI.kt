@@ -96,19 +96,10 @@ class PluginUI(
                 }
                 else {
                     if(state.isTracking) {
-                        Messages.showInfoMessage(activityTrackerStoppingMessage, activityTrackerStoppingTitle)
-                        Thread.sleep(sleep.toLong())
                         plugin.toggleTracking()
                         Variables.neuroSkyAttention.stopConnection()
 
-                        val op = monitoringOperations(document, editor, filePath, createAttentionDataset)
-
-                        isButtonHighlightActive = if(op == NULL_CODE) {
-                            Messages.showWarningDialog(noTrackingActivityMessage, noTrackingActivityTitle)
-                            false
-                        } else {
-                            true
-                        }
+                        isButtonHighlightActive = true
                     } else {
                         Messages.showInfoMessage(waitingNeuroSkyMessage, waitingTitle)
                         val isStarted: Boolean = Variables.neuroSkyAttention.waitForStarting()
@@ -152,12 +143,24 @@ class PluginUI(
                 }
                 else {
                     if(!state.isTracking && isButtonHighlightActive) {
-                        val op = monitoringOperations(document, editor, filePath, highlightLines)
 
-                        if(op == NULL_CODE)
-                            Messages.showErrorDialog(noTrackingActivityMessage, noTrackingActivityTitle)
-                        else {
+                        Messages.showInfoMessage(highlightLinesMessage, waitingTitle)
+                        Thread.sleep(sleep.toLong())
+
+                        val createOperation = monitoringOperations(document, editor, filePath, createAttentionDataset)
+
+                        if(createOperation == NULL_CODE) {
                             isButtonHighlightActive = false
+                            Messages.showWarningDialog(noTrackingActivityMessage, noTrackingActivityTitle)
+                        } else {
+                            isButtonHighlightActive = true
+                            val highlightOperation = monitoringOperations(document, editor, filePath, highlightLines)
+
+                            if(highlightOperation == NULL_CODE)
+                                Messages.showErrorDialog(noTrackingActivityMessage, noTrackingActivityTitle)
+                            else {
+                                isButtonHighlightActive = false
+                            }
                         }
                     }
                     else if(!state.isTracking && !isButtonHighlightActive) {
@@ -209,17 +212,17 @@ class PluginUI(
         }
     }
 
-    private fun monitoringOperations(document: Document, editor: Editor, path: String, operation: Int): Int {
+    private fun monitoringOperations(document: Document, editor: Editor, fileOnFocus: String, operation: Int): Int {
         when (operation) {
             createAttentionDataset -> {
                 val fileParser = FileParser()
                 fileParser.writeFile("${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv",
                     Variables.attentionList as MutableList<Array<String>>, true)
 
-                return processPluginOutput.createPluginOutput(path)
+                return processPluginOutput.createPluginOutput(fileOnFocus)
             }
             highlightLines -> {
-                return processPluginOutput.getHighlightedAttentionLines(document, editor, path)
+                return processPluginOutput.getHighlightedAttentionLines(document, editor, fileOnFocus)
             }
             removeHighlightedLines -> {
                 val textHighlightAttention = TextHighlightAttention()
@@ -272,28 +275,6 @@ class PluginUI(
         )
 
     private fun createActionGroup(): DefaultActionGroup {
-        /*val toggleTracking = object: AnAction(), DumbAware {
-            override fun actionPerformed(event: AnActionEvent) = plugin.toggleTracking()
-            override fun update(event: AnActionEvent) {
-                event.presentation.text = if (state.isTracking) "Stop Tracking" else "Start Tracking"
-            }
-        }
-        val togglePollIdeState = object: CheckboxAction("Poll IDE State") {
-            override fun isSelected(event: AnActionEvent) = state.pollIdeState
-            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enablePollIdeState(value)
-        }
-        val toggleTrackActions = object: CheckboxAction("Track IDE Actions") {
-            override fun isSelected(event: AnActionEvent) = state.trackIdeActions
-            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackIdeActions(value)
-        }
-        val toggleTrackKeyboard = object: CheckboxAction("Track Keyboard") {
-            override fun isSelected(event: AnActionEvent) = state.trackKeyboard
-            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackKeyboard(value)
-        }
-        val toggleTrackMouse = object: CheckboxAction("Track Mouse") {
-            override fun isSelected(event: AnActionEvent) = state.trackMouse
-            override fun setSelected(event: AnActionEvent, value: Boolean) = plugin.enableTrackMouse(value)
-        }*/
         val openLogInIde = object: AnAction("Open in IDE"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) = plugin.openTrackingLogFile(event.project)
         }
@@ -362,13 +343,10 @@ class PluginUI(
             override fun actionPerformed(event: AnActionEvent) = BrowserUtil.open("https://github.com/dkandalov/activity-tracker#help")
         }
 
-        //registerAction("Start/Stop Activity Tracking", action = toggleTracking)
         registerAction("Roll Tracking Log", action = rollCurrentLog)
         registerAction("Clear Tracking Log", action = clearCurrentLog)
-        // TODO register other actions
 
         return DefaultActionGroup().apply {
-            //add(toggleTracking)
             add(DefaultActionGroup("Current Log", true).apply {
                 add(showStatistics)
                 add(openLogInIde)
@@ -377,13 +355,6 @@ class PluginUI(
                 add(rollCurrentLog)
                 add(clearCurrentLog)
             })
-            /*addSeparator()
-            add(DefaultActionGroup("Settings", true).apply {
-                add(toggleTrackActions)
-                add(togglePollIdeState)
-                add(toggleTrackKeyboard)
-                add(toggleTrackMouse)
-            })*/
             add(openHelp)
         }
     }
@@ -393,19 +364,18 @@ class PluginUI(
         const val highlightLines = 1
         const val removeHighlightedLines = 2
         const val sleep = 5000
-        const val noTrackingActivityMessage = "No tracking activity detected."
         const val noTrackingActivityTitle = "Tracker File Empty!"
-        const val noProjectOrFileMessage = "No project or file selected!"
-        const val noProjectOrFileTitle = "Select a Project and a File."
+        const val noTrackingActivityMessage = "No tracking activity detected for this file."
+        const val noProjectOrFileTitle = "No project or file selected!"
+        const val noProjectOrFileMessage = "Select a Project and a File."
 
+        const val waitingTitle = "Please wait!"
         const val waitingNeuroSkyMessage = "Waiting NeuroSky Mindwave... "
-        const val waitingTitle = "Waiting!"
-        const val activityTrackerRunningMessage = "Activity Tracker is running... "
         const val runningTitle = "Running!"
-        const val neuroSkyNotWorkingMessage = "Put on the NeuroSky Mindwave and check that it is on!"
+        const val activityTrackerRunningMessage = "Activity Tracker is running... "
         const val neuroSkyNotWorkingTitle = "NeuroSky Not Working!"
-        const val activityTrackerStoppingMessage = "Activity Tracker is stopping... "
-        const val activityTrackerStoppingTitle = "Stopping!"
+        const val neuroSkyNotWorkingMessage = "Put on the NeuroSky Mindwave and check that it is on!"
+        const val highlightLinesMessage = "Data processing and highlighting in progress... "
 
         const val OK_CODE = 0
         const val NULL_CODE = -1

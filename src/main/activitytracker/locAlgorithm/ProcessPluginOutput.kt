@@ -19,19 +19,14 @@ class ProcessPluginOutput {
 
     fun createPluginOutput(fileOnFocus: String?): Int {
         val fileParser = FileParser()
-        val trackerOutput = processATOutput.getCleanedATOutput(
-            fileOnFocus!!
-        )
-        this.attentionValuesOutput = fileParser.parseCSVFile(ATTENTION_DATASET_FILENAME) as MutableList<Array<String>>
+        val trackerOutput = this.processATOutput.getCleanedATOutput(ACTIVITY_TRACKER_DATASET_FILENAME, fileOnFocus!!)
 
-        if (trackerOutput != null) {
-            pluginDataset = updateLineNumbers(trackerOutput)
-            deleteEmptyInstructionOutput()
-            mergeAttentionValues(this.attentionValuesOutput)
-            fileParser.writeFile(DATASET_FILENAME, pluginDataset, false)
-            return OK_CODE
-        }
-        return NULL_CODE
+        this.attentionValuesOutput = fileParser.parseCSVFile(ATTENTION_DATASET_FILENAME) as MutableList<Array<String>>
+        this.pluginDataset = updateLineNumbers(trackerOutput)
+        this.deleteEmptyInstructionOutput()
+        this.mergeAttentionValues(this.attentionValuesOutput)
+        fileParser.writeFile(FINAL_DATASET_FILENAME, pluginDataset, false)
+        return OK_CODE
     }
 
     private fun updateLineNumbers(list: List<Array<String>>): MutableList<Array<String>> {
@@ -191,7 +186,7 @@ class ProcessPluginOutput {
 
     fun getHighlightedAttentionLines(document: Document, editor: Editor, fileOnFocus: String): Int {
         val fileParser = FileParser()
-        val attentionValues = fileParser.parseCSVFile(DATASET_FILENAME) ?: return NULL_CODE
+        val attentionValues = fileParser.parseCSVFile(FINAL_DATASET_FILENAME) ?: return NULL_CODE
 
         val textHighlightAttention = TextHighlightAttention()
         for (i in 0 until document.lineCount) {
@@ -202,7 +197,7 @@ class ProcessPluginOutput {
             )
             if (editor.document.getText(range).trim { it <= ' ' } != "") {
                 val meanAttentionLine = getMeanLineAttention(attentionValues, fileOnFocus, editorLineNumber)
-                if (meanAttentionLine > 0) textHighlightAttention.addLineHighlighter(
+                if (meanAttentionLine >= 0) textHighlightAttention.addLineHighlighter(
                     editor,
                     editorLineNumber,
                     meanAttentionLine
@@ -217,7 +212,8 @@ class ProcessPluginOutput {
         var occurrences = 0
         for (row in list) {
             if (fileOnFocus == row[FILENAME] &&
-                line == row[LINE].toInt()
+                line == row[LINE].toInt() &&
+                row[ATTENTION].toInt() != NEUROSKY_ATTENTION_ERROR
             ) {
                 sum += row[ATTENTION].toInt()
                 occurrences++
@@ -232,12 +228,6 @@ class ProcessPluginOutput {
         return formatter.parse(dateTime)
     }
 
-    /* Provisional method */
-    /**TODO: Forse va in tilt se avvii col pulsantino e mentre rileva se NeuroSky è attivo, clicchi per es. per chiudere
-    il popup che esce di solito in basso a destra */
-
-    //TODO: inoltre non va se faccio due volte start per iniziare il monitoraggio
-    //TODO: se mentre uno programma esegue il suo programma?!?
     private fun mergeAttentionValues(attentionList: MutableList<Array<String>>) {
         var attention = "-1"
         for (i in 0 until pluginDataset.size) {
@@ -265,7 +255,8 @@ class ProcessPluginOutput {
     }
 
     companion object {
-        private val DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events-attention.csv"
+        private val FINAL_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events-attention.csv"
+        private val ACTIVITY_TRACKER_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
         private val ATTENTION_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv"
 
         const val OK_CODE = 0
@@ -285,6 +276,8 @@ class ProcessPluginOutput {
         /* Indexes for the attention list */
         const val NEUROSKY_TIMESTAMP = 0
         const val NEUROSKY_ATTENTION = 1
+
+        const val NEUROSKY_ATTENTION_ERROR = -1
     }
 
     init {
