@@ -11,7 +11,7 @@ class TextHighlightAttention {
     fun addLineHighlighter(editor: Editor, line: Int, attentionValue: Int) {
         var color: Color? = null
         color =
-            if (attentionValue <= MIN_ATTENTION) Color(255, 0, 0)
+            if (attentionValue <= MIN_ATTENTION) Color(150, 10, 10)
             else if (attentionValue <= LOW_ATTENTION) Color(255, 77, 0)
             else if (attentionValue <= MEDIUM_ATTENTION) Color(255, 255, 0)
             else if (attentionValue <= HIGH_ATTENTION) Color(173, 255, 47)

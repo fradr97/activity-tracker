@@ -96,28 +96,25 @@ class PluginUI(
                 }
                 else {
                     if(state.isTracking) {
+                        Messages.showInfoMessage(activityTrackerStoppingMessage, activityTrackerStoppingTitle)
                         Thread.sleep(sleep.toLong())
                         plugin.toggleTracking()
                         Variables.neuroSkyAttention.stopConnection()
 
-                        val fileParser = FileParser()
-                        fileParser.writeFile("${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv",
-                            Variables.attentionList as MutableList<Array<String>>, false)
-
                         val op = monitoringOperations(document, editor, filePath, createAttentionDataset)
 
                         isButtonHighlightActive = if(op == NULL_CODE) {
-                            Messages.showErrorDialog(noTrackingActivityMessage, noTrackingActivityTitle)
+                            Messages.showWarningDialog(noTrackingActivityMessage, noTrackingActivityTitle)
                             false
                         } else {
                             true
                         }
                     } else {
-                        Messages.showMessageDialog("Waiting!", "Waiting Neurosky ...", null)
+                        Messages.showInfoMessage(waitingNeuroSkyMessage, waitingTitle)
                         val isStarted: Boolean = Variables.neuroSkyAttention.waitForStarting()
 
                         if (isStarted) {
-                            Messages.showMessageDialog("Running!", "Neurosky Is Running ...", null)
+                            Messages.showInfoMessage(activityTrackerRunningMessage, runningTitle)
                             val attentionThread = Thread(AttentionThread())
                             attentionThread.start()
 
@@ -125,7 +122,7 @@ class PluginUI(
                             monitoringOperations(document, editor, filePath, removeHighlightedLines)
                             isButtonHighlightActive = false
                         } else {
-                            Messages.showErrorDialog("Neurosky not working!", "Neurosky Not Working!")
+                            Messages.showErrorDialog(neuroSkyNotWorkingMessage, neuroSkyNotWorkingTitle)
                         }
                     }
                 }
@@ -215,7 +212,11 @@ class PluginUI(
     private fun monitoringOperations(document: Document, editor: Editor, path: String, operation: Int): Int {
         when (operation) {
             createAttentionDataset -> {
-                return processPluginOutput.createPluginOutput(path, Variables.attentionList as MutableList<Array<String>>)
+                val fileParser = FileParser()
+                fileParser.writeFile("${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv",
+                    Variables.attentionList as MutableList<Array<String>>, true)
+
+                return processPluginOutput.createPluginOutput(path)
             }
             highlightLines -> {
                 return processPluginOutput.getHighlightedAttentionLines(document, editor, path)
@@ -396,6 +397,16 @@ class PluginUI(
         const val noTrackingActivityTitle = "Tracker File Empty!"
         const val noProjectOrFileMessage = "No project or file selected!"
         const val noProjectOrFileTitle = "Select a Project and a File."
+
+        const val waitingNeuroSkyMessage = "Waiting NeuroSky Mindwave... "
+        const val waitingTitle = "Waiting!"
+        const val activityTrackerRunningMessage = "Activity Tracker is running... "
+        const val runningTitle = "Running!"
+        const val neuroSkyNotWorkingMessage = "Put on the NeuroSky Mindwave and check that it is on!"
+        const val neuroSkyNotWorkingTitle = "NeuroSky Not Working!"
+        const val activityTrackerStoppingMessage = "Activity Tracker is stopping... "
+        const val activityTrackerStoppingTitle = "Stopping!"
+
         const val OK_CODE = 0
         const val NULL_CODE = -1
     }

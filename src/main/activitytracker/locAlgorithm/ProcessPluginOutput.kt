@@ -11,21 +11,23 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
-
 class ProcessPluginOutput {
     private var pluginDataset: MutableList<Array<String>>
     private val processATOutput: ProcessActivityTrackerOutput
+    private lateinit var attentionValuesOutput: MutableList<Array<String>>
     private val stringUtils: StringUtils
 
-    fun createPluginOutput(fileOnFocus: String?, attentionList: MutableList<Array<String>>): Int {
+    fun createPluginOutput(fileOnFocus: String?): Int {
         val fileParser = FileParser()
         val trackerOutput = processATOutput.getCleanedATOutput(
             fileOnFocus!!
         )
+        this.attentionValuesOutput = fileParser.parseCSVFile(ATTENTION_DATASET_FILENAME) as MutableList<Array<String>>
+
         if (trackerOutput != null) {
             pluginDataset = updateLineNumbers(trackerOutput)
             deleteEmptyInstructionOutput()
-            mergeAttentionValues(attentionList)
+            mergeAttentionValues(this.attentionValuesOutput)
             fileParser.writeFile(DATASET_FILENAME, pluginDataset, false)
             return OK_CODE
         }
@@ -143,8 +145,7 @@ class ProcessPluginOutput {
             list[index][LINE],
             list[index][COLUMN],
             list[index][LINE_INSTRUCTION],
-            list[index][CURRENT_LINE_COUNT] /*,
-                list.get(index)[ATTENTION]*/
+            list[index][CURRENT_LINE_COUNT]
         )
     }
 
@@ -156,8 +157,7 @@ class ProcessPluginOutput {
             list[index][FILENAME], (list[index][LINE].toInt() + lineOffset).toString(),
             list[index][COLUMN],
             list[index][LINE_INSTRUCTION],
-            list[index][CURRENT_LINE_COUNT] /*,
-                list.get(index)[ATTENTION]*/
+            list[index][CURRENT_LINE_COUNT]
         )
     }
 
@@ -227,14 +227,14 @@ class ProcessPluginOutput {
     }
 
     @Throws(ParseException::class)
-    private fun getTimestampFromString(dateTime: String): Date? {
+    private fun getDateFromString(dateTime: String): Date? {
         val formatter = SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS")
         return formatter.parse(dateTime)
     }
 
     /* Provisional method */
-    //TODO: Forse va in tilt se avvii col pulsantino e mentre rileva se NeuroSky è attivo, clicchi per es. per chiudere
-    //il popup che esce di solito in basso a destra
+    /**TODO: Forse va in tilt se avvii col pulsantino e mentre rileva se NeuroSky è attivo, clicchi per es. per chiudere
+    il popup che esce di solito in basso a destra */
 
     //TODO: inoltre non va se faccio due volte start per iniziare il monitoraggio
     //TODO: se mentre uno programma esegue il suo programma?!?
@@ -242,14 +242,11 @@ class ProcessPluginOutput {
         var attention = "-1"
         for (i in 0 until pluginDataset.size) {
             for (j in attentionList.indices) {
-                if (getTimestampFromString(attentionList[j][NEUROSKY_TIMESTAMP])!!.before(
-                        getTimestampFromString(
-                            pluginDataset[i][TIMESTAMP]
-                        )
-                    ) || getTimestampFromString(attentionList[j][NEUROSKY_TIMESTAMP]) == getTimestampFromString(
-                        pluginDataset[i][TIMESTAMP]
-                    )
-                ) attention = attentionList[j][NEUROSKY_ATTENTION]
+                if (getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP])!!
+                        .before(getDateFromString(pluginDataset[i][TIMESTAMP])) ||
+                    getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP]) == getDateFromString(
+                        pluginDataset[i][TIMESTAMP]))
+                    attention = attentionList[j][NEUROSKY_ATTENTION]
             }
 
             val row = arrayOf(
@@ -267,15 +264,9 @@ class ProcessPluginOutput {
         }
     }
 
-    /* Provisional method */
-    private val randomAttention: Int
-        get() {
-            val r = Random()
-            return r.nextInt(100) + 1
-        }
-
     companion object {
         private val DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events-attention.csv"
+        private val ATTENTION_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv"
 
         const val OK_CODE = 0
         const val NULL_CODE = -1

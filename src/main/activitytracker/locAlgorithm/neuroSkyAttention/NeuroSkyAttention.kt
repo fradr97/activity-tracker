@@ -11,7 +11,6 @@ open class NeuroSkyAttention {
     private var timer: Int
 
     private fun starting(): Boolean {
-        isStarted = false
         if (thinkGearSocketClient.isDataAvailable) {
             while (!isStarted && timer < WAITING_TIME) {
                 val jsonString: String = thinkGearSocketClient.data
@@ -26,6 +25,12 @@ open class NeuroSkyAttention {
     }
 
     fun waitForStarting(): Boolean {
+        if(!thinkGearSocketClient.isConnected)
+            thinkGearSocketClient.connect()
+
+        timer = 0
+        isStarted = false
+
         val timerThread = Thread(TimerThread())
         timerThread.start()
         starting()
@@ -46,7 +51,9 @@ open class NeuroSkyAttention {
                         -1
                     }
                     val timestamp = DateTime.now()
-                    val time = timestamp.toString().replace("T", " ").replace("+02:00", "")
+                    val time = timestamp.toString()
+                        .replace("T", " ")
+                        .replace("+02:00", "")
                     list.add(arrayOf(time, attention.toString()))
                 }
                 list
