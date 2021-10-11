@@ -7,14 +7,17 @@ import activitytracker.locAlgorithm.utils.StringUtils
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
+import java.text.ParseException
+import java.text.SimpleDateFormat
 import java.util.*
+
 
 class ProcessPluginOutput {
     private var pluginDataset: MutableList<Array<String>>
     private val processATOutput: ProcessActivityTrackerOutput
     private val stringUtils: StringUtils
 
-    fun createPluginOutput(fileOnFocus: String?): Int {
+    fun createPluginOutput(fileOnFocus: String?, attentionList: MutableList<Array<String>>): Int {
         val fileParser = FileParser()
         val trackerOutput = processATOutput.getCleanedATOutput(
             fileOnFocus!!
@@ -22,7 +25,7 @@ class ProcessPluginOutput {
         if (trackerOutput != null) {
             pluginDataset = updateLineNumbers(trackerOutput)
             deleteEmptyInstructionOutput()
-            mergeAttentionValues()
+            mergeAttentionValues(attentionList)
             fileParser.writeFile(DATASET_FILENAME, pluginDataset, false)
             return OK_CODE
         }
@@ -223,9 +226,32 @@ class ProcessPluginOutput {
         return if (occurrences == 0) NULL_CODE else sum / occurrences
     }
 
+    @Throws(ParseException::class)
+    private fun getTimestampFromString(dateTime: String): Date? {
+        val formatter = SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS")
+        return formatter.parse(dateTime)
+    }
+
     /* Provisional method */
-    private fun mergeAttentionValues() {
-        for (i in pluginDataset.indices) {
+    //TODO: Forse va in tilt se avvii col pulsantino e mentre rileva se NeuroSky è attivo, clicchi per es. per chiudere
+    //il popup che esce di solito in basso a destra
+
+    //TODO: inoltre non va se faccio due volte start per iniziare il monitoraggio
+    //TODO: se mentre uno programma esegue il suo programma?!?
+    private fun mergeAttentionValues(attentionList: MutableList<Array<String>>) {
+        var attention = "-1"
+        for (i in 0 until pluginDataset.size) {
+            for (j in attentionList.indices) {
+                if (getTimestampFromString(attentionList[j][NEUROSKY_TIMESTAMP])!!.before(
+                        getTimestampFromString(
+                            pluginDataset[i][TIMESTAMP]
+                        )
+                    ) || getTimestampFromString(attentionList[j][NEUROSKY_TIMESTAMP]) == getTimestampFromString(
+                        pluginDataset[i][TIMESTAMP]
+                    )
+                ) attention = attentionList[j][NEUROSKY_ATTENTION]
+            }
+
             val row = arrayOf(
                 pluginDataset[i][TIMESTAMP],
                 pluginDataset[i][EVENT_TYPE],
@@ -235,7 +261,7 @@ class ProcessPluginOutput {
                 pluginDataset[i][COLUMN],
                 pluginDataset[i][LINE_INSTRUCTION],
                 pluginDataset[i][CURRENT_LINE_COUNT],
-                randomAttention.toString()
+                attention
             )
             pluginDataset[i] = row
         }

@@ -215,7 +215,7 @@ class PluginUI(
     private fun monitoringOperations(document: Document, editor: Editor, path: String, operation: Int): Int {
         when (operation) {
             createAttentionDataset -> {
-                return processPluginOutput.createPluginOutput(path)
+                return processPluginOutput.createPluginOutput(path, Variables.attentionList as MutableList<Array<String>>)
             }
             highlightLines -> {
                 return processPluginOutput.getHighlightedAttentionLines(document, editor, path)
