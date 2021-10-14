@@ -17,8 +17,7 @@ open class NeuroSkyAttention {
                 try {
                     val jsonObject = JSONObject(jsonString).getJSONObject("eSense")
                     if (jsonObject != null) isStarted = true
-                } catch (ignored: Exception) {
-                }
+                } catch (ignored: Exception) { }
             }
         }
         return isStarted
@@ -85,6 +84,6 @@ open class NeuroSkyAttention {
     }
 
     companion object {
-        private const val WAITING_TIME = 20
+        private const val WAITING_TIME = 15
     }
 }

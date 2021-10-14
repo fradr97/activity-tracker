@@ -18,16 +18,20 @@ class ThinkGearSocketClient {
 
     @Throws(IOException::class)
     fun connect() {
-        if (!isConnected) {
-            println("connect() - Starting new connection...")
-            channel = SocketChannel.open(InetSocketAddress(host, port))
-            val enc = StandardCharsets.US_ASCII.newEncoder()
-            val jsonCommand = "{\"enableRawOutput\": false, \"format\": \"Json\"}\n"
-            channel?.write(enc.encode(CharBuffer.wrap(jsonCommand)))
-            `in` = Scanner(channel)
-            isConnected = true
-        } else {
-            println("connect() - Already connected...")
+        try {
+            if (!isConnected) {
+                println("connect() - Starting new connection...")
+                channel = SocketChannel.open(InetSocketAddress(host, port))
+                val enc = StandardCharsets.US_ASCII.newEncoder()
+                val jsonCommand = "{\"enableRawOutput\": false, \"format\": \"Json\"}\n"
+                channel?.write(enc.encode(CharBuffer.wrap(jsonCommand)))
+                `in` = Scanner(channel)
+                isConnected = true
+            } else {
+                println("connect() - Already connected...")
+            }
+        } catch (ex : Exception) {
+            isConnected = false
         }
     }
 

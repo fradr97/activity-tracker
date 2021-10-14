@@ -143,7 +143,6 @@ class PluginUI(
                 }
                 else {
                     if(!state.isTracking && isButtonHighlightActive) {
-
                         Messages.showInfoMessage(highlightLinesMessage, waitingTitle)
                         Thread.sleep(sleep.toLong())
 
@@ -368,13 +367,12 @@ class PluginUI(
         const val noTrackingActivityMessage = "No tracking activity detected for this file."
         const val noProjectOrFileTitle = "No project or file selected!"
         const val noProjectOrFileMessage = "Select a Project and a File."
-
         const val waitingTitle = "Please wait!"
-        const val waitingNeuroSkyMessage = "Waiting NeuroSky Mindwave... "
+        const val waitingNeuroSkyMessage = "Waiting NeuroSky MindWave headset... "
         const val runningTitle = "Running!"
-        const val activityTrackerRunningMessage = "Activity Tracker is running... "
-        const val neuroSkyNotWorkingTitle = "NeuroSky Not Working!"
-        const val neuroSkyNotWorkingMessage = "Put on the NeuroSky Mindwave and check that it is on!"
+        const val activityTrackerRunningMessage = "Tracker is running... "
+        const val neuroSkyNotWorkingTitle = "NeuroSky MindWave headset Not Working!"
+        const val neuroSkyNotWorkingMessage = "Put on the NeuroSky MindWave headset and check that it is on!"
         const val highlightLinesMessage = "Data processing and highlighting in progress... "
 
         const val OK_CODE = 0
