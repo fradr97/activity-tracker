@@ -1,14 +1,14 @@
 package activitytracker.locAlgorithm.utils
 
 import com.opencsv.CSVReader
-import java.io.IOException
-import com.opencsv.exceptions.CsvException
-import java.io.FileWriter
 import com.opencsv.CSVWriter
-import java.io.File
-import java.io.FileReader
+import com.opencsv.exceptions.CsvException
+import org.apache.commons.io.comparator.LastModifiedFileComparator
+import org.apache.commons.io.filefilter.WildcardFileFilter
+import java.io.*
+import java.util.*
 
-class FileParser {
+class FileUtils {
     fun parseCSVFile(filepath: String?): List<Array<String>>? {
         var r: List<Array<String>>
         try {
@@ -38,5 +38,17 @@ class FileParser {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
+    }
+
+    fun getLastModifiedFile(filePath: String?, ext: String): File? {
+        val lastModifiedFile: File
+        val dir = File(filePath)
+        val fileFilter: FileFilter = WildcardFileFilter("*.$ext")
+        val files = dir.listFiles(fileFilter) ?: return null
+        lastModifiedFile = if (files.isNotEmpty()) {
+            Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE)
+            files[0]
+        } else return null
+        return lastModifiedFile
     }
 }

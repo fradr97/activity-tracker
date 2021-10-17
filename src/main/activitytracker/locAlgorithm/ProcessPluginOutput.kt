@@ -2,7 +2,7 @@ package activitytracker.locAlgorithm
 
 import activitytracker.locAlgorithm.activityTrackerOutput.ProcessActivityTrackerOutput
 import activitytracker.locAlgorithm.gui.TextHighlightAttention
-import activitytracker.locAlgorithm.utils.FileParser
+import activitytracker.locAlgorithm.utils.FileUtils
 import activitytracker.locAlgorithm.utils.StringUtils
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -18,14 +18,14 @@ class ProcessPluginOutput {
     private val stringUtils: StringUtils
 
     fun createPluginOutput(fileOnFocus: String?): Int {
-        val fileParser = FileParser()
+        val fileUtils = FileUtils()
         val trackerOutput = this.processATOutput.getCleanedATOutput(ACTIVITY_TRACKER_DATASET_FILENAME, fileOnFocus!!)
 
-        this.attentionValuesOutput = fileParser.parseCSVFile(ATTENTION_DATASET_FILENAME) as MutableList<Array<String>>
+        this.attentionValuesOutput = fileUtils.parseCSVFile(ATTENTION_DATASET_FILENAME) as MutableList<Array<String>>
         this.pluginDataset = updateLineNumbers(trackerOutput)
         this.deleteEmptyInstructionOutput()
         this.mergeAttentionValues(this.attentionValuesOutput)
-        fileParser.writeFile(FINAL_DATASET_FILENAME, pluginDataset, false)
+        fileUtils.writeFile(FINAL_DATASET_FILENAME, pluginDataset, false)
         return OK_CODE
     }
 
@@ -185,8 +185,8 @@ class ProcessPluginOutput {
     }
 
     fun getHighlightedAttentionLines(document: Document, editor: Editor, fileOnFocus: String): Int {
-        val fileParser = FileParser()
-        val attentionValues = fileParser.parseCSVFile(FINAL_DATASET_FILENAME) ?: return NULL_CODE
+        val fileUtils = FileUtils()
+        val attentionValues = fileUtils.parseCSVFile(FINAL_DATASET_FILENAME) ?: return NULL_CODE
 
         val textHighlightAttention = TextHighlightAttention()
         for (i in 0 until document.lineCount) {

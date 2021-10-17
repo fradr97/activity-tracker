@@ -6,7 +6,7 @@ import activitytracker.liveplugin.*
 import activitytracker.locAlgorithm.ProcessPluginOutput
 import activitytracker.locAlgorithm.gui.TextHighlightAttention
 import activitytracker.locAlgorithm.neuroSkyAttention.NeuroSkyAttention
-import activitytracker.locAlgorithm.utils.FileParser
+import activitytracker.locAlgorithm.utils.FileUtils
 import com.intellij.CommonBundle
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.RevealFileAction
@@ -214,8 +214,8 @@ class PluginUI(
     private fun monitoringOperations(document: Document, editor: Editor, fileOnFocus: String, operation: Int): Int {
         when (operation) {
             createAttentionDataset -> {
-                val fileParser = FileParser()
-                fileParser.writeFile("${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv",
+                val fileUtils = FileUtils()
+                fileUtils.writeFile("${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv",
                     Variables.attentionList as MutableList<Array<String>>, true)
 
                 return processPluginOutput.createPluginOutput(fileOnFocus)

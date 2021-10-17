@@ -1,6 +1,6 @@
 package activitytracker.locAlgorithm.activityTrackerOutput
 
-import activitytracker.locAlgorithm.utils.FileParser
+import activitytracker.locAlgorithm.utils.FileUtils
 import java.lang.ArrayIndexOutOfBoundsException
 import java.util.ArrayList
 
@@ -8,8 +8,8 @@ class ProcessActivityTrackerOutput {
     private lateinit var activityTrackerOutput: MutableList<Array<String>>
 
     fun getCleanedATOutput(activityTrackerDateset: String, fileOnFocus: String): List<Array<String>> {
-        val fileParser = FileParser()
-        this.activityTrackerOutput = fileParser.parseCSVFile(activityTrackerDateset) as MutableList<Array<String>>
+        val fileUtils = FileUtils()
+        this.activityTrackerOutput = fileUtils.parseCSVFile(activityTrackerDateset) as MutableList<Array<String>>
         this.cleanATOutput(fileOnFocus)
         return this.activityTrackerOutput
     }
