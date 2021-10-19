@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
 import java.io.File
+import kotlin.math.roundToInt
 
 class ProcessPluginOutput {
     private var pluginDataset: MutableList<Array<String>>
@@ -239,8 +240,7 @@ class ProcessPluginOutput {
                 occurrences++
             }
         }
-        //TODO: round up
-        return if (occurrences == 0) NULL_CODE else sum / occurrences
+        return if (occurrences == 0) NULL_CODE else (sum / occurrences).toDouble().roundToInt()
     }
 
     private fun mergeAttentionAndAUsValues(attentionList: MutableList<Array<String>>, openFaceAUsList: MutableList<Array<String>>) {
@@ -269,19 +269,19 @@ class ProcessPluginOutput {
 
         for (i in 0 until pluginDataset.size) {
             for (j in attentionList.indices) {
-                if (dateTimeUtils.getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP], "$baseFormat.SSS")!!
-                        .before(dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")) ||
-                    dateTimeUtils.getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP], "$baseFormat.SSS") ==
-                    dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS"))
+                val pluginDate = dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")
+                val attentionDate = dateTimeUtils.getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP], "$baseFormat.SSS")
+                val sameDates = dateTimeUtils.checkSameDates(pluginDate.toString(), attentionDate.toString())
+
+                if (sameDates && attentionDate!!.before(pluginDate))
                     attention = attentionList[j][NEUROSKY_ATTENTION]
             }
             for (k in openFaceAUsList.indices) {
-                //TODO: check on date and hour! Also for attention values!
+                val pluginDate = dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")
+                val ofDate = dateTimeUtils.getDateFromString(openFaceAUsList[k][OF_TIMESTAMP], "$baseFormat:SSS")
+                val sameDates = dateTimeUtils.checkSameDates(pluginDate.toString(), ofDate.toString())
 
-                if (dateTimeUtils.getDateFromString(openFaceAUsList[k][OF_TIMESTAMP], "$baseFormat:SSS")!!
-                        .before(dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")) ||
-                    dateTimeUtils.getDateFromString(openFaceAUsList[k][OF_TIMESTAMP], "$baseFormat:SSS") ==
-                    dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")) {
+                if (sameDates && ofDate!!.before(pluginDate)) {
                     au01 = openFaceAUsList[k][OF_AU01_r]
                     au02 = openFaceAUsList[k][OF_AU02_r]
                     au04 = openFaceAUsList[k][OF_AU04_r]

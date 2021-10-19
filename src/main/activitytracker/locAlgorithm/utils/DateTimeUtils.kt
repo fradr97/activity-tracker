@@ -4,6 +4,7 @@ import java.io.File
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.abs
 
 class DateTimeUtils(private val file: File) {
     private var sdf: SimpleDateFormat? = null
@@ -62,5 +63,29 @@ class DateTimeUtils(private val file: File) {
     fun getDateFromString(dateTime: String, format: String): Date? {
         val formatter = SimpleDateFormat(format)
         return formatter.parse(dateTime)
+    }
+
+    /* checks if two dates are equal and accepts a 1-second time difference margin */
+    @Throws(ParseException::class)
+    fun checkSameDates(date1: String, date2: String): Boolean {
+        return date1 == date2 || datesMilliesDiff(date1, date2) <= 1000
+    }
+
+    @Throws(ParseException::class)
+    private fun datesMilliesDiff(date1: String, date2: String): Long {
+        sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+        sdf!!.timeZone = TimeZone.getTimeZone("UTC")
+
+        val diff: Long
+        val dt1: Date
+        val dt2: Date
+        try {
+            dt1 = sdf!!.parse(date1)
+            dt2 = sdf!!.parse(date2)
+            diff = abs(dt2.time - dt1.time)
+        } catch (e: ParseException) {
+            return -9999    //Error
+        }
+        return diff
     }
 }
