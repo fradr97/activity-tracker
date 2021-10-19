@@ -8,6 +8,7 @@ import org.apache.commons.io.filefilter.WildcardFileFilter
 import java.io.*
 import java.util.*
 
+
 class FileUtils {
     fun parseCSVFile(filepath: String?): List<Array<String>>? {
         var r: List<Array<String>>
@@ -38,6 +39,11 @@ class FileUtils {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
+    }
+
+    fun addCSVHeader(filepath: String?, list: MutableList<Array<String>>, headers: MutableList<Array<String>>) {
+        writeFile(filepath, headers, false)
+        writeFile(filepath, list, true)
     }
 
     fun getLastModifiedFile(filePath: String?, ext: String): File? {

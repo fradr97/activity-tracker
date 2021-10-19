@@ -1,5 +1,6 @@
 package activitytracker.locAlgorithm.openFaceOutput
 
+import activitytracker.locAlgorithm.utils.DateTimeUtils
 import activitytracker.locAlgorithm.utils.FileUtils
 import java.io.File
 import java.util.ArrayList
@@ -8,7 +9,6 @@ class ProcessOpenFaceOutput {
     private val file: File?
     private val fileUtils: FileUtils = FileUtils()
 
-    //position 0 is the header
     val openFaceAUs: List<Array<String>>?
         get() {
             val newOpenFaceList: MutableList<Array<String>> = ArrayList()
@@ -26,8 +26,8 @@ class ProcessOpenFaceOutput {
         }
 
     private fun getNewOFLine(list: List<Array<String>>?, index: Int): Array<String> {
-        val dateTimeProcess = DateTimeProcess(file!!)
-        val dateTime = dateTimeProcess.lastModificationAddedToTimeLaps(list!![index][OF_TIMESTAMP])
+        val dateTimeUtils = DateTimeUtils(file!!)
+        val dateTime = dateTimeUtils.lastModificationAddedToTimeLaps(list!![index][OF_TIMESTAMP])
         return arrayOf(
             dateTime,
             list[index][OF_AU01_r],

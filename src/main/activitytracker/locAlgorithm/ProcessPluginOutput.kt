@@ -2,31 +2,50 @@ package activitytracker.locAlgorithm
 
 import activitytracker.locAlgorithm.activityTrackerOutput.ProcessActivityTrackerOutput
 import activitytracker.locAlgorithm.gui.TextHighlightAttention
+import activitytracker.locAlgorithm.openFaceOutput.ProcessOpenFaceOutput
+import activitytracker.locAlgorithm.utils.DateTimeUtils
 import activitytracker.locAlgorithm.utils.FileUtils
 import activitytracker.locAlgorithm.utils.StringUtils
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
-import java.text.ParseException
-import java.text.SimpleDateFormat
-import java.util.*
+import java.io.File
 
 class ProcessPluginOutput {
     private var pluginDataset: MutableList<Array<String>>
     private val processATOutput: ProcessActivityTrackerOutput
     private lateinit var attentionValuesOutput: MutableList<Array<String>>
+    private lateinit var openFaceAUsOutput: MutableList<Array<String>>
+
     private val stringUtils: StringUtils
 
     fun createPluginOutput(fileOnFocus: String?): Int {
         val fileUtils = FileUtils()
+        val processOpenFaceOutput = ProcessOpenFaceOutput()
+
         val trackerOutput = this.processATOutput.getCleanedATOutput(ACTIVITY_TRACKER_DATASET_FILENAME, fileOnFocus!!)
 
         this.attentionValuesOutput = fileUtils.parseCSVFile(ATTENTION_DATASET_FILENAME) as MutableList<Array<String>>
+        this.openFaceAUsOutput = processOpenFaceOutput.openFaceAUs as MutableList<Array<String>>
+
+        //TODO: check if openFaceAUsOutput is null
         this.pluginDataset = updateLineNumbers(trackerOutput)
         this.deleteEmptyInstructionOutput()
-        this.mergeAttentionValues(this.attentionValuesOutput)
-        fileUtils.writeFile(FINAL_DATASET_FILENAME, pluginDataset, false)
+        this.mergeAttentionAndAUsValues(this.attentionValuesOutput, this.openFaceAUsOutput)
+
+        fileUtils.addCSVHeader(FINAL_DATASET_FILENAME, this.pluginDataset, createHeadersOutput() as MutableList<Array<String>>)
         return OK_CODE
+    }
+
+    private fun createHeadersOutput(): List<Array<String>> {
+        val list: MutableList<Array<String>> = java.util.ArrayList()
+        val headers = arrayOf(
+            "Timestamp", "EventType", "EventData", "ModifiedFile", "Line", "Column", "Instruction",
+            "LinesNumber", "Attention", "AU01", "AU02", "AU04", "AU05", "AU06", "AU07", "AU09",
+            "AU10", "AU12", "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45"
+        )
+        list.add(headers)
+        return list
     }
 
     private fun updateLineNumbers(list: List<Array<String>>): MutableList<Array<String>> {
@@ -149,7 +168,8 @@ class ProcessPluginOutput {
             list[index][TIMESTAMP],
             list[index][EVENT_TYPE],
             list[index][EVENT],
-            list[index][FILENAME], (list[index][LINE].toInt() + lineOffset).toString(),
+            list[index][FILENAME],
+            (list[index][LINE].toInt() + lineOffset).toString(),
             list[index][COLUMN],
             list[index][LINE_INSTRUCTION],
             list[index][CURRENT_LINE_COUNT]
@@ -219,24 +239,67 @@ class ProcessPluginOutput {
                 occurrences++
             }
         }
+        //TODO: round up
         return if (occurrences == 0) NULL_CODE else sum / occurrences
     }
 
-    @Throws(ParseException::class)
-    private fun getDateFromString(dateTime: String): Date? {
-        val formatter = SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS")
-        return formatter.parse(dateTime)
-    }
+    private fun mergeAttentionAndAUsValues(attentionList: MutableList<Array<String>>, openFaceAUsList: MutableList<Array<String>>) {
+        val dateTimeUtils = DateTimeUtils(File(""))
+        val baseFormat = "yyyy-MM-dd hh:mm:ss"
 
-    private fun mergeAttentionValues(attentionList: MutableList<Array<String>>) {
         var attention = "-1"
+
+        var au01 = "0.000"
+        var au02 = "0.000"
+        var au04 = "0.000"
+        var au05 = "0.000"
+        var au06 = "0.000"
+        var au07 = "0.000"
+        var au09 = "0.000"
+        var au10 = "0.000"
+        var au12 = "0.000"
+        var au14 = "0.000"
+        var au15 = "0.000"
+        var au17 = "0.000"
+        var au20 = "0.000"
+        var au23 = "0.000"
+        var au25 = "0.000"
+        var au26 = "0.000"
+        var au45 = "0.000"
+
         for (i in 0 until pluginDataset.size) {
             for (j in attentionList.indices) {
-                if (getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP])!!
-                        .before(getDateFromString(pluginDataset[i][TIMESTAMP])) ||
-                    getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP]) == getDateFromString(
-                        pluginDataset[i][TIMESTAMP]))
+                if (dateTimeUtils.getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP], "$baseFormat.SSS")!!
+                        .before(dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")) ||
+                    dateTimeUtils.getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP], "$baseFormat.SSS") ==
+                    dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS"))
                     attention = attentionList[j][NEUROSKY_ATTENTION]
+            }
+            for (k in openFaceAUsList.indices) {
+                //TODO: check on date and hour! Also for attention values!
+
+                if (dateTimeUtils.getDateFromString(openFaceAUsList[k][OF_TIMESTAMP], "$baseFormat:SSS")!!
+                        .before(dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")) ||
+                    dateTimeUtils.getDateFromString(openFaceAUsList[k][OF_TIMESTAMP], "$baseFormat:SSS") ==
+                    dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")) {
+                    au01 = openFaceAUsList[k][OF_AU01_r]
+                    au02 = openFaceAUsList[k][OF_AU02_r]
+                    au04 = openFaceAUsList[k][OF_AU04_r]
+                    au05 = openFaceAUsList[k][OF_AU05_r]
+                    au06 = openFaceAUsList[k][OF_AU06_r]
+                    au07 = openFaceAUsList[k][OF_AU07_r]
+                    au09 = openFaceAUsList[k][OF_AU09_r]
+                    au10 = openFaceAUsList[k][OF_AU10_r]
+                    au12 = openFaceAUsList[k][OF_AU12_r]
+                    au14 = openFaceAUsList[k][OF_AU14_r]
+                    au15 = openFaceAUsList[k][OF_AU15_r]
+                    au17 = openFaceAUsList[k][OF_AU17_r]
+                    au20 = openFaceAUsList[k][OF_AU20_r]
+                    au23 = openFaceAUsList[k][OF_AU23_r]
+                    au25 = openFaceAUsList[k][OF_AU25_r]
+                    au26 = openFaceAUsList[k][OF_AU26_r]
+                    au45 = openFaceAUsList[k][OF_AU45_r]
+                }
             }
 
             val row = arrayOf(
@@ -248,7 +311,24 @@ class ProcessPluginOutput {
                 pluginDataset[i][COLUMN],
                 pluginDataset[i][LINE_INSTRUCTION],
                 pluginDataset[i][CURRENT_LINE_COUNT],
-                attention
+                attention,
+                au01,
+                au02,
+                au04,
+                au05,
+                au06,
+                au07,
+                au09,
+                au10,
+                au12,
+                au14,
+                au15,
+                au17,
+                au20,
+                au23,
+                au25,
+                au26,
+                au45
             )
             pluginDataset[i] = row
         }
@@ -273,11 +353,31 @@ class ProcessPluginOutput {
         const val CURRENT_LINE_COUNT = 7
         const val ATTENTION = 8
 
-        /* Indexes for the attention list */
+        /* Indexes for the attention list (old) */
         const val NEUROSKY_TIMESTAMP = 0
         const val NEUROSKY_ATTENTION = 1
 
         const val NEUROSKY_ATTENTION_ERROR = -1
+
+        /* Indexes for the OpenFace list (old) */
+        const val OF_TIMESTAMP = 0
+        const val OF_AU01_r = 1
+        const val OF_AU02_r = 2
+        const val OF_AU04_r = 3
+        const val OF_AU05_r = 4
+        const val OF_AU06_r = 5
+        const val OF_AU07_r = 6
+        const val OF_AU09_r = 7
+        const val OF_AU10_r = 8
+        const val OF_AU12_r = 9
+        const val OF_AU14_r = 10
+        const val OF_AU15_r = 11
+        const val OF_AU17_r = 12
+        const val OF_AU20_r = 13
+        const val OF_AU23_r = 14
+        const val OF_AU25_r = 15
+        const val OF_AU26_r = 16
+        const val OF_AU45_r = 17
     }
 
     init {

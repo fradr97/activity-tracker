@@ -1,11 +1,11 @@
-package activitytracker.locAlgorithm.openFaceOutput
+package activitytracker.locAlgorithm.utils
 
 import java.io.File
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
-class DateTimeProcess(private val file: File) {
+class DateTimeUtils(private val file: File) {
     private var sdf: SimpleDateFormat? = null
 
     fun lastModificationAddedToTimeLaps(timeLapse: String): String {
@@ -56,5 +56,11 @@ class DateTimeProcess(private val file: File) {
             }
         }
         return occ
+    }
+
+    @Throws(ParseException::class)
+    fun getDateFromString(dateTime: String, format: String): Date? {
+        val formatter = SimpleDateFormat(format)
+        return formatter.parse(dateTime)
     }
 }
