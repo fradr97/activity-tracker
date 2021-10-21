@@ -148,7 +148,7 @@ class ProcessPluginOutput {
         val lengthLineEvent = list[index][LINE_INSTRUCTION].length
         val startInstruction: Int = lengthLineEvent - stringUtils.stripLeading(list[index][LINE_INSTRUCTION]).length
         val endInstruction: Int = stringUtils.stripTrailing(list[index][LINE_INSTRUCTION]).length
-        return columnEvent > startInstruction && columnEvent < endInstruction
+        return columnEvent in (startInstruction + 1) until endInstruction
     }
 
     private fun createNewLine(list: List<Array<String>>, index: Int): Array<String> {
@@ -335,9 +335,9 @@ class ProcessPluginOutput {
     }
 
     companion object {
-        private val FINAL_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events-attention.csv"
-        private val ACTIVITY_TRACKER_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
-        private val ATTENTION_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv"
+        val FINAL_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events-attention.csv"
+        val ACTIVITY_TRACKER_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
+        val ATTENTION_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv"
 
         const val OK_CODE = 0
         const val NULL_CODE = -1

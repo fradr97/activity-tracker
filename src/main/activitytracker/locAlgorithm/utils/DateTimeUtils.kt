@@ -65,10 +65,10 @@ class DateTimeUtils(private val file: File) {
         return formatter.parse(dateTime)
     }
 
-    /* checks if two dates are equal and accepts a 1-second time difference margin */
+    /* checks if two dates are equal accepting a 1-second time difference margin */
     @Throws(ParseException::class)
     fun checkSameDates(date1: String, date2: String): Boolean {
-        return date1 == date2 || datesMilliesDiff(date1, date2) <= 1000
+        return datesMilliesDiff(date1, date2) <= 1000
     }
 
     @Throws(ParseException::class)

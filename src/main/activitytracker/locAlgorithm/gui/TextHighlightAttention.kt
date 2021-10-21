@@ -10,7 +10,7 @@ import java.awt.Font
 class TextHighlightAttention {
     fun addLineHighlighter(editor: Editor, line: Int, attentionValue: Int) {
         val color: Color = if (attentionValue <= MIN_ATTENTION) Color(255, 0, 0)
-        else if (attentionValue <= LOW_ATTENTION) Color(255, 80, 0)
+        else if (attentionValue <= LOW_ATTENTION) Color(255, 90, 0)
         else if (attentionValue <= MEDIUM_ATTENTION) Color(255, 255, 0)
         else if (attentionValue <= HIGH_ATTENTION) Color(173, 255, 47)
         else Color(0, 255, 0)

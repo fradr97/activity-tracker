@@ -215,7 +215,7 @@ class PluginUI(
         when (operation) {
             createAttentionDataset -> {
                 val fileUtils = FileUtils()
-                fileUtils.writeFile("${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv",
+                fileUtils.writeFile(ProcessPluginOutput.ATTENTION_DATASET_FILENAME,
                     Variables.attentionList as MutableList<Array<String>>, true)
 
                 return processPluginOutput.createPluginOutput(fileOnFocus)
