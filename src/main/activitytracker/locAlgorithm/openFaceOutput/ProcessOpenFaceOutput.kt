@@ -2,32 +2,33 @@ package activitytracker.locAlgorithm.openFaceOutput
 
 import activitytracker.locAlgorithm.utils.DateTimeUtils
 import activitytracker.locAlgorithm.utils.FileUtils
+import com.intellij.openapi.application.PathManager
 import java.io.File
-import java.util.ArrayList
+import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+import kotlin.collections.ArrayList
 
 class ProcessOpenFaceOutput {
-    private val file: File?
+    private var file: File?
     private val fileUtils: FileUtils = FileUtils()
 
-    val openFaceAUs: List<Array<String>>?
+    val openFaceAUs: List<Array<String>>
         get() {
             val newOpenFaceList: MutableList<Array<String>> = ArrayList()
             var newLine: Array<String>
-            return if (file == null) {
-                null
-            } else {
-                val openFaceOutput = fileUtils.parseCSVFile(file.toString())
-                for (i in 1 until openFaceOutput!!.size) {  //position 0 is the header
-                    newLine = getNewOFLine(openFaceOutput, i)
-                    newOpenFaceList.add(newLine)
-                }
-                newOpenFaceList
+            val openFaceOutput = fileUtils.parseCSVFile(file.toString())
+            for (i in 1 until openFaceOutput!!.size) {  //position 0 is the header
+                newLine = getNewOFLine(openFaceOutput, i)
+                newOpenFaceList.add(newLine)
             }
+            return newOpenFaceList
         }
 
     private fun getNewOFLine(list: List<Array<String>>?, index: Int): Array<String> {
-        val dateTimeUtils = DateTimeUtils(file!!)
-        val dateTime = dateTimeUtils.lastModificationAddedToTimeLaps(list!![index][OF_TIMESTAMP])
+        val dateTimeUtils = DateTimeUtils()
+        val dateTime = dateTimeUtils.dataCreationAddedToTimeLaps(file!!, list!![index][OF_TIMESTAMP])
         return arrayOf(
             dateTime,
             list[index][OF_AU01_r],
@@ -49,6 +50,15 @@ class ProcessOpenFaceOutput {
             list[index][OF_AU26_r],
             list[index][OF_AU45_r]
         )
+    }
+
+    private fun defaultOpenFaceOutput(): File {
+        val defaultOFOutputSource: InputStream = javaClass.getResourceAsStream("/open-face-output-stub/open-face-output-stub.csv")
+        File(PathManager.getPluginsPath() + "/open-face-output-stub/").mkdirs()
+        val defaultOFOutputTarget = PathManager.getPluginsPath() + "/open-face-output-stub/open-face-output-stub.csv"
+
+        Files.copy(defaultOFOutputSource, Paths.get(defaultOFOutputTarget), StandardCopyOption.REPLACE_EXISTING)
+        return File(defaultOFOutputTarget)
     }
 
     companion object {
@@ -75,5 +85,8 @@ class ProcessOpenFaceOutput {
 
     init {
         file = fileUtils.getLastModifiedFile(OPEN_FACE_DATASET_DIRECTORY, "csv")
+
+        if(file == null)
+            file = defaultOpenFaceOutput()
     }
 }

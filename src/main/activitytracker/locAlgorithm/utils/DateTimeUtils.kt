@@ -1,24 +1,35 @@
 package activitytracker.locAlgorithm.utils
 
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.abs
 
-class DateTimeUtils(private val file: File) {
+class DateTimeUtils {
     private var sdf: SimpleDateFormat? = null
 
-    fun lastModificationAddedToTimeLaps(timeLapse: String): String {
-        val lastModificationDateTime = getLastModificationFile(file)
-        val date = lastModificationDateTime.substring(0, 10)
-        val lastModificationTime = lastModificationDateTime.substring(11)
-        return date + " " + sumTimes(lastModificationTime, timeLapseToTime(timeLapse))
+    fun dataCreationAddedToTimeLaps(file: File, timeLapse: String): String {
+        val dataCreationDateTime = getDataCreationFile(file)
+        val date = dataCreationDateTime!!.substring(0, 10)
+        val dataCreationTime = dataCreationDateTime.substring(11)
+        return date + " " + sumTimes(dataCreationTime, timeLapseToTime(timeLapse))
     }
 
-    private fun getLastModificationFile(file: File): String {
-        sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SS")
-        return sdf!!.format(file.lastModified())
+    private fun getDataCreationFile(file: File): String? {
+        val attrs: BasicFileAttributes
+        return try {
+            attrs = Files.readAttributes(file.toPath(), BasicFileAttributes::class.java)
+            val time = attrs.creationTime()
+            val pattern = "yyyy-MM-dd HH:mm:ss:SSS"
+            val simpleDateFormat = SimpleDateFormat(pattern)
+            simpleDateFormat.format(Date(time.toMillis()))
+        } catch (e: IOException) {
+            "0000-00-00 00:00:00:000"
+        }
     }
 
     private fun sumTimes(time1: String, time2: String): String? {
