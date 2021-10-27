@@ -33,6 +33,7 @@ import java.awt.Point
 import java.awt.event.MouseEvent
 import java.util.*
 import javax.swing.Icon
+import javax.swing.JTextField
 
 
 class PluginUI(
@@ -58,6 +59,8 @@ class PluginUI(
         registerPopup(parentDisposable)
         registerButtonStartStopMonitoring(parentDisposable)
         registerButtonHighlightLines(parentDisposable)
+        registerAttentionIndicator(parentDisposable)
+        registerSettings(parentDisposable)
         eventAnalyzer.runner = { task ->
             runInBackground("Analyzing activity log", task = { task() })
         }
@@ -98,7 +101,6 @@ class PluginUI(
                     if(state.isTracking) {
                         plugin.toggleTracking()
                         Variables.neuroSkyAttention.stopConnection()
-
                         isButtonHighlightActive = true
                     } else {
                         Messages.showInfoMessage(waitingNeuroSkyMessage, waitingTitle)
@@ -175,7 +177,7 @@ class PluginUI(
             }
             override fun update(event: AnActionEvent) {
                 icon = if(isButtonHighlightActive) {
-                    IconLoader.getIcon("AllIcons.Actions.Colors")
+                    IconLoader.getIcon("AllIcons.Actions.Lightning")
                 } else {
                     IconLoader.getIcon("AllIcons.Actions.Cancel")
                 }
@@ -184,6 +186,49 @@ class PluginUI(
         }
         registerAction("Highlight Lines", "", "ToolbarRunGroup",
             "Highlight Lines", parentDisposable, buttonHighlight)
+    }
+
+    private fun registerAttentionIndicator(parentDisposable: Disposable) {
+        var icon: Icon
+        var attention: Int
+
+        val attentionIndicatorIcon = object: AnAction("Attention Indicator"), DumbAware {
+            override fun actionPerformed(event: AnActionEvent) {
+            }
+            override fun update(event: AnActionEvent) {
+                attention = Variables.neuroSkyAttention.checkAttention
+
+                icon = when (attention) {
+                    in NeuroSkyAttention.NO_ATTENTION..NeuroSkyAttention.HIGH_ATTENTION -> {
+                        IconLoader.getIcon("AllIcons.Actions.IntentionBulb")
+                    }
+                    in NeuroSkyAttention.HIGH_ATTENTION + 1..NeuroSkyAttention.MAX_ATTENTION -> {
+                        IconLoader.getIcon("AllIcons.Actions.QuickfixOffBulb")
+                    }
+                    else -> {
+                        IconLoader.getIcon("AllIcons.Actions.QuickfixBulb")
+                    }
+                }
+                event.presentation.icon = icon
+            }
+        }
+        registerAction("Attention Indicator", "", "ToolbarRunGroup",
+            "Attention Indicator", parentDisposable, attentionIndicatorIcon)
+    }
+
+    private fun registerSettings(parentDisposable: Disposable) {
+        val buttonSettings = object: AnAction("Set OpenFace Output"), DumbAware {
+            override fun actionPerformed(event: AnActionEvent) {
+                val jTextField = JTextField()
+
+                var response = Messages.showTextAreaDialog(jTextField,"Set OpenFace Output", "e.g. ")
+            }
+            override fun update(event: AnActionEvent) {
+                event.presentation.icon = IconLoader.getIcon("AllIcons.General.Settings")
+            }
+        }
+        registerAction("OpenFace output", "", "ToolbarRunGroup",
+            "Set OpenFace Output", parentDisposable, buttonSettings)
     }
 
     private fun checkProjectOrFile(event: AnActionEvent): Int {

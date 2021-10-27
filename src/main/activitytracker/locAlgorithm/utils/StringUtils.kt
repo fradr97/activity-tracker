@@ -13,7 +13,7 @@ class StringUtils {
         return string.replaceFirst("\\s++$".toRegex(), "")
     }
 
-    fun replaceLastOccurrence(string: String, oldOcc: String, newOcc: String): String? {
+    fun replaceLastOccurrence(string: String, oldOcc: String, newOcc: String): String {
         var i = string.length - 1
         if (string.contains(oldOcc)) {
             while (i > 0 && string[i].toString() != oldOcc) {

@@ -59,6 +59,24 @@ open class NeuroSkyAttention {
             } else null
         }
 
+    val checkAttention: Int
+        get() {
+            if(!thinkGearSocketClient.isConnected)
+                thinkGearSocketClient.connect()
+
+            val attention: Int
+            return if (thinkGearSocketClient.isDataAvailable) {
+                val jsonString: String = thinkGearSocketClient.data
+                attention = try {
+                    val jsonObject = JSONObject(jsonString).getJSONObject("eSense")
+                    jsonObject.getInt("attention")
+                } catch (ex: Exception) {
+                    -1
+                }
+                attention
+            } else -1
+        }
+
     @Throws(IOException::class)
     fun stopConnection() {
         isStarted = false
@@ -85,5 +103,12 @@ open class NeuroSkyAttention {
 
     companion object {
         private const val WAITING_TIME = 15
+
+        const val NO_ATTENTION = 0
+        const val MIN_ATTENTION = 20
+        const val LOW_ATTENTION = 40
+        const val MEDIUM_ATTENTION = 60
+        const val HIGH_ATTENTION = 80
+        const val MAX_ATTENTION = 100
     }
 }

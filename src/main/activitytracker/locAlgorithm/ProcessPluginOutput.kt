@@ -245,24 +245,25 @@ class ProcessPluginOutput {
         val baseFormat = "yyyy-MM-dd hh:mm:ss"
 
         var attention = "-1"
+        val defaultAUsDensity = "0.000"
 
-        var au01 = "0.000"
-        var au02 = "0.000"
-        var au04 = "0.000"
-        var au05 = "0.000"
-        var au06 = "0.000"
-        var au07 = "0.000"
-        var au09 = "0.000"
-        var au10 = "0.000"
-        var au12 = "0.000"
-        var au14 = "0.000"
-        var au15 = "0.000"
-        var au17 = "0.000"
-        var au20 = "0.000"
-        var au23 = "0.000"
-        var au25 = "0.000"
-        var au26 = "0.000"
-        var au45 = "0.000"
+        var au01 = defaultAUsDensity
+        var au02 = defaultAUsDensity
+        var au04 = defaultAUsDensity
+        var au05 = defaultAUsDensity
+        var au06 = defaultAUsDensity
+        var au07 = defaultAUsDensity
+        var au09 = defaultAUsDensity
+        var au10 = defaultAUsDensity
+        var au12 = defaultAUsDensity
+        var au14 = defaultAUsDensity
+        var au15 = defaultAUsDensity
+        var au17 = defaultAUsDensity
+        var au20 = defaultAUsDensity
+        var au23 = defaultAUsDensity
+        var au25 = defaultAUsDensity
+        var au26 = defaultAUsDensity
+        var au45 = defaultAUsDensity
 
         for (i in 0 until pluginDataset.size) {
             val pluginDate = dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")

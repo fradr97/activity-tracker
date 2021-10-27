@@ -1,5 +1,6 @@
 package activitytracker.locAlgorithm.gui
 
+import activitytracker.locAlgorithm.neuroSkyAttention.NeuroSkyAttention
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.HighlighterLayer
@@ -9,10 +10,10 @@ import java.awt.Font
 
 class TextHighlightAttention {
     fun addLineHighlighter(editor: Editor, line: Int, attentionValue: Int) {
-        val color: Color = if (attentionValue <= MIN_ATTENTION) Color(255, 0, 0)
-        else if (attentionValue <= LOW_ATTENTION) Color(255, 90, 0)
-        else if (attentionValue <= MEDIUM_ATTENTION) Color(255, 255, 0)
-        else if (attentionValue <= HIGH_ATTENTION) Color(173, 255, 47)
+        val color: Color = if (attentionValue <= NeuroSkyAttention.MIN_ATTENTION) Color(255, 0, 0)
+        else if (attentionValue <= NeuroSkyAttention.LOW_ATTENTION) Color(255, 90, 0)
+        else if (attentionValue <= NeuroSkyAttention.MEDIUM_ATTENTION) Color(255, 255, 0)
+        else if (attentionValue <= NeuroSkyAttention.HIGH_ATTENTION) Color(173, 255, 47)
         else Color(0, 255, 0)
 
         val textAttributes = TextAttributes(null, color, null, EffectType.LINE_UNDERSCORE, Font.PLAIN)
@@ -21,12 +22,5 @@ class TextHighlightAttention {
 
     fun removeAllHighlighter(editor: Editor) {
         editor.markupModel.removeAllHighlighters()
-    }
-
-    companion object {
-        private const val MIN_ATTENTION = 20
-        private const val LOW_ATTENTION = 40
-        private const val MEDIUM_ATTENTION = 60
-        private const val HIGH_ATTENTION = 80
     }
 }
