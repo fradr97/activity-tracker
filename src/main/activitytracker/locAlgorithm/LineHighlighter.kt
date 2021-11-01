@@ -1,4 +1,4 @@
-package activitytracker.locAlgorithm.gui
+package activitytracker.locAlgorithm
 
 import activitytracker.locAlgorithm.neuroSkyAttention.NeuroSkyAttention
 import com.intellij.openapi.editor.Editor
@@ -8,7 +8,7 @@ import com.intellij.openapi.editor.markup.TextAttributes
 import java.awt.Color
 import java.awt.Font
 
-class TextHighlightAttention {
+class LineHighlighter {
     fun addLineHighlighter(editor: Editor, line: Int, attentionValue: Int) {
         val color: Color = if (attentionValue <= NeuroSkyAttention.MIN_ATTENTION) Color(255, 0, 0)
         else if (attentionValue <= NeuroSkyAttention.LOW_ATTENTION) Color(255, 90, 0)

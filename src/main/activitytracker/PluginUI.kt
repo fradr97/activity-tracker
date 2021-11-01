@@ -4,7 +4,7 @@ import activitytracker.EventAnalyzer.Result.*
 import activitytracker.Plugin.Companion.pluginId
 import activitytracker.liveplugin.*
 import activitytracker.locAlgorithm.ProcessPluginOutput
-import activitytracker.locAlgorithm.gui.TextHighlightAttention
+import activitytracker.locAlgorithm.LineHighlighter
 import activitytracker.locAlgorithm.neuroSkyAttention.NeuroSkyAttention
 import activitytracker.locAlgorithm.utils.FileUtils
 import com.intellij.CommonBundle
@@ -269,8 +269,8 @@ class PluginUI(
                 return processPluginOutput.getHighlightedAttentionLines(document, editor, fileOnFocus)
             }
             removeHighlightedLines -> {
-                val textHighlightAttention = TextHighlightAttention()
-                textHighlightAttention.removeAllHighlighter(editor)
+                val lineHighlighter = LineHighlighter()
+                lineHighlighter.removeAllHighlighter(editor)
                 return OK_CODE
             }
         }

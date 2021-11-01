@@ -1,7 +1,6 @@
 package activitytracker.locAlgorithm
 
 import activitytracker.locAlgorithm.activityTrackerOutput.ProcessActivityTrackerOutput
-import activitytracker.locAlgorithm.gui.TextHighlightAttention
 import activitytracker.locAlgorithm.openFaceOutput.ProcessOpenFaceOutput
 import activitytracker.locAlgorithm.utils.DateTimeUtils
 import activitytracker.locAlgorithm.utils.FileUtils
@@ -206,7 +205,7 @@ class ProcessPluginOutput {
         val fileUtils = FileUtils()
         val attentionValues = fileUtils.parseCSVFile(FINAL_DATASET_FILENAME) ?: return NULL_CODE
 
-        val textHighlightAttention = TextHighlightAttention()
+        val lineHighlighter = LineHighlighter()
         for (i in 0 until document.lineCount) {
             val editorLineNumber = i + 1
             val range = TextRange(
@@ -215,7 +214,7 @@ class ProcessPluginOutput {
             )
             if (editor.document.getText(range).trim { it <= ' ' } != "") {
                 val meanAttentionLine = getMeanLineAttention(attentionValues, fileOnFocus, editorLineNumber)
-                if (meanAttentionLine >= 0) textHighlightAttention.addLineHighlighter(
+                if (meanAttentionLine >= 0) lineHighlighter.addLineHighlighter(
                     editor,
                     editorLineNumber,
                     meanAttentionLine

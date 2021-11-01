@@ -38,21 +38,20 @@ open class NeuroSkyAttention {
 
     val attention: MutableList<Array<String>>?
         get() {
-            var attention: Int
+            var attention = 0
             val list: MutableList<Array<String>> = ArrayList()
             return if (thinkGearSocketClient.isDataAvailable) {
                 while (thinkGearSocketClient.isConnected && isStarted) {
                     val jsonString: String = thinkGearSocketClient.data
-                    attention = try {
+                    try {
                         val jsonObject = JSONObject(jsonString).getJSONObject("eSense")
-                        jsonObject.getInt("attention")
-                    } catch (ex: Exception) {
-                        -1
-                    }
+                        attention = jsonObject.getInt("attention")
+                    } catch (ignored: Exception) { }
                     val timestamp = DateTime.now()
                     val time = timestamp.toString()
                         .replace("T", " ")
                         .replace("+02:00", "")
+                        .replace("+01:00", "")
                     list.add(arrayOf(time, attention.toString()))
                 }
                 list
@@ -64,15 +63,13 @@ open class NeuroSkyAttention {
             if(!thinkGearSocketClient.isConnected)
                 thinkGearSocketClient.connect()
 
-            val attention: Int
+            var attention = 0
             return if (thinkGearSocketClient.isDataAvailable) {
                 val jsonString: String = thinkGearSocketClient.data
-                attention = try {
+                try {
                     val jsonObject = JSONObject(jsonString).getJSONObject("eSense")
-                    jsonObject.getInt("attention")
-                } catch (ex: Exception) {
-                    -1
-                }
+                    attention = jsonObject.getInt("attention")
+                } catch (ignored: Exception) { }
                 attention
             } else -1
         }
