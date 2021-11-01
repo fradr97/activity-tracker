@@ -18,9 +18,9 @@ class ProcessPluginOutput {
 
     private val stringUtils: StringUtils
 
-    fun createPluginOutput(fileOnFocus: String?): Int {
+    fun createPluginOutput(fileOnFocus: String?, openFaceOutputFilePath: String?): Int {
         val fileUtils = FileUtils()
-        val processOpenFaceOutput = ProcessOpenFaceOutput()
+        val processOpenFaceOutput = ProcessOpenFaceOutput(openFaceOutputFilePath)
 
         val trackerOutput = this.processATOutput.getCleanedATOutput(ACTIVITY_TRACKER_DATASET_FILENAME, fileOnFocus!!)
 
@@ -229,8 +229,7 @@ class ProcessPluginOutput {
         var occurrences = 0
         for (row in list) {
             if (fileOnFocus == row[FILENAME] &&
-                line == row[LINE].toInt() &&
-                row[ATTENTION].toInt() != NEUROSKY_ATTENTION_ERROR
+                line == row[LINE].toInt()
             ) {
                 sum += row[ATTENTION].toInt()
                 occurrences++
@@ -241,9 +240,8 @@ class ProcessPluginOutput {
 
     private fun mergeAttentionAndAUsValues(attentionList: MutableList<Array<String>>, openFaceAUsList: MutableList<Array<String>>) {
         val dateTimeUtils = DateTimeUtils()
-        val baseFormat = "yyyy-MM-dd hh:mm:ss"
 
-        var attention = "-1"
+        var attention = "0"
         val defaultAUsDensity = "0.000"
 
         var au01 = defaultAUsDensity
@@ -265,22 +263,21 @@ class ProcessPluginOutput {
         var au45 = defaultAUsDensity
 
         for (i in 0 until pluginDataset.size) {
-            val pluginDate = dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP], "$baseFormat.SSS")
+            val pluginDate = dateTimeUtils.getDateFromString(pluginDataset[i][TIMESTAMP])
 
             for (j in attentionList.indices) {
-                val attentionDate = dateTimeUtils.getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP], "$baseFormat.SSS")
-                val sameDates = dateTimeUtils.checkSameDates(pluginDate.toString(), attentionDate.toString())
+                val attentionDate = dateTimeUtils.getDateFromString(attentionList[j][NEUROSKY_TIMESTAMP])
+                val sameDates = dateTimeUtils.checkSameDates(pluginDate, attentionDate)
 
                 if (sameDates && attentionDate!!.before(pluginDate))
                     attention = attentionList[j][NEUROSKY_ATTENTION]
             }
             for (k in openFaceAUsList.indices) {
                 val ofDate = dateTimeUtils.getDateFromString(
-                    stringUtils.replaceLastOccurrence(openFaceAUsList[k][OF_TIMESTAMP], ":", ".")!!,
-                    "$baseFormat.SSS")
-                val sameDates = dateTimeUtils.checkSameDates(pluginDate.toString(), ofDate.toString())
+                    stringUtils.replaceLastOccurrence(openFaceAUsList[k][OF_TIMESTAMP], ":", "."))
+                val sameDates = dateTimeUtils.checkSameDates(pluginDate, ofDate)
 
-                if (sameDates &&  ofDate!!.before(pluginDate)) {
+                if (sameDates && ofDate!!.before(pluginDate)) {
                     au01 = openFaceAUsList[k][OF_AU01_r]
                     au02 = openFaceAUsList[k][OF_AU02_r]
                     au04 = openFaceAUsList[k][OF_AU04_r]
@@ -355,8 +352,6 @@ class ProcessPluginOutput {
         /* Indexes for the attention list (old) */
         const val NEUROSKY_TIMESTAMP = 0
         const val NEUROSKY_ATTENTION = 1
-
-        const val NEUROSKY_ATTENTION_ERROR = -1
 
         /* Indexes for the OpenFace list (old) */
         const val OF_TIMESTAMP = 0

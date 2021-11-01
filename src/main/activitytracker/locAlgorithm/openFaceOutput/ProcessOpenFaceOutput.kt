@@ -10,7 +10,7 @@ import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import kotlin.collections.ArrayList
 
-class ProcessOpenFaceOutput {
+class ProcessOpenFaceOutput(outputFilePath: String?) {
     private var file: File?
     private val fileUtils: FileUtils = FileUtils()
 
@@ -80,11 +80,10 @@ class ProcessOpenFaceOutput {
         const val OF_AU25_r = 693
         const val OF_AU26_r = 694
         const val OF_AU45_r = 695
-        private const val OPEN_FACE_DATASET_DIRECTORY = "C:\\Users\\Francesco\\Desktop\\output\\"
     }
 
     init {
-        file = fileUtils.getLastModifiedFile(OPEN_FACE_DATASET_DIRECTORY, "csv")
+        file = fileUtils.getLastModifiedFile(outputFilePath, "csv")
 
         if(file == null)
             file = defaultOpenFaceOutput()

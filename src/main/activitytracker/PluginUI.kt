@@ -73,12 +73,13 @@ class PluginUI(
     }
 
     private fun registerPopup(parentDisposable: Disposable) {
-        registerAction("$pluginId-Popup", "ctrl shift alt O", "", "Activity Tracker Popup", parentDisposable, {
+        registerAction("$pluginId-Popup", "ctrl shift alt O", "",
+            "Activity Tracker Popup", parentDisposable) {
             val project = it.project
             if (project != null) {
                 createListPopup(it.dataContext).showCenteredInCurrentWindow(project)
             }
-        })
+        }
     }
 
     private fun registerButtonStartStopMonitoring(parentDisposable: Disposable) {
@@ -101,8 +102,17 @@ class PluginUI(
                     if(state.isTracking) {
                         plugin.toggleTracking()
                         Variables.neuroSkyAttention.stopConnection()
+
+                        val fileUtils = FileUtils()
+                        fileUtils.writeFile(ProcessPluginOutput.ATTENTION_DATASET_FILENAME,
+                            Variables.attentionList as MutableList<Array<String>>, true)
+
                         isButtonHighlightActive = true
                     } else {
+                        if(openFaceOutputFilePath?.trim() == "" ||
+                            openFaceOutputFilePath?.trim() == null)
+                            setOpenFaceOutputFolder()
+
                         Messages.showInfoMessage(waitingNeuroSkyMessage, waitingTitle)
                         val isStarted: Boolean = Variables.neuroSkyAttention.waitForStarting()
 
@@ -199,7 +209,7 @@ class PluginUI(
                 attention = Variables.neuroSkyAttention.checkAttention
 
                 icon = when (attention) {
-                    in NeuroSkyAttention.NO_ATTENTION..NeuroSkyAttention.HIGH_ATTENTION -> {
+                    in NeuroSkyAttention.NO_ATTENTION + 1..NeuroSkyAttention.HIGH_ATTENTION -> {
                         IconLoader.getIcon("AllIcons.Actions.IntentionBulb")
                     }
                     in NeuroSkyAttention.HIGH_ATTENTION + 1..NeuroSkyAttention.MAX_ATTENTION -> {
@@ -219,9 +229,7 @@ class PluginUI(
     private fun registerSettings(parentDisposable: Disposable) {
         val buttonSettings = object: AnAction("Set OpenFace Output"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
-                val jTextField = JTextField()
-
-                var response = Messages.showTextAreaDialog(jTextField,"Set OpenFace Output", "e.g. ")
+                setOpenFaceOutputFolder()
             }
             override fun update(event: AnActionEvent) {
                 event.presentation.icon = IconLoader.getIcon("AllIcons.General.Settings")
@@ -229,6 +237,15 @@ class PluginUI(
         }
         registerAction("OpenFace output", "", "ToolbarRunGroup",
             "Set OpenFace Output", parentDisposable, buttonSettings)
+    }
+
+    private fun setOpenFaceOutputFolder() {
+        val jTextField = JTextField()
+        Messages.showTextAreaDialog(jTextField, settingsTitle, "")
+        openFaceOutputFilePath = jTextField.text.replace("\\", "\\\\").trim()
+
+        if(openFaceOutputFilePath!!.substring(openFaceOutputFilePath!!.length - 1) != "\\")
+            openFaceOutputFilePath += "\\"
     }
 
     private fun checkProjectOrFile(event: AnActionEvent): Int {
@@ -259,11 +276,7 @@ class PluginUI(
     private fun monitoringOperations(document: Document, editor: Editor, fileOnFocus: String, operation: Int): Int {
         when (operation) {
             createAttentionDataset -> {
-                val fileUtils = FileUtils()
-                fileUtils.writeFile(ProcessPluginOutput.ATTENTION_DATASET_FILENAME,
-                    Variables.attentionList as MutableList<Array<String>>, true)
-
-                return processPluginOutput.createPluginOutput(fileOnFocus)
+                return processPluginOutput.createPluginOutput(fileOnFocus, openFaceOutputFilePath)
             }
             highlightLines -> {
                 return processPluginOutput.getHighlightedAttentionLines(document, editor, fileOnFocus)
@@ -337,7 +350,8 @@ class PluginUI(
                                 is Ok             -> {
                                     StatsToolWindow.showIn(project, result.stats, eventAnalyzer, parentDisposable)
                                     if (result.errors.isNotEmpty()) {
-                                        showNotification("There were ${result.errors.size} errors parsing log file. See IDE log for details.")
+                                        showNotification("There were ${result.errors.size} errors parsing log file. " +
+                                                "See IDE log for details.")
                                         result.errors.forEach { log.warn(it.first, it.second) }
                                     }
                                 }
@@ -419,9 +433,12 @@ class PluginUI(
         const val neuroSkyNotWorkingTitle = "NeuroSky MindWave headset Not Working!"
         const val neuroSkyNotWorkingMessage = "Put on the NeuroSky MindWave headset and check that it is on!"
         const val highlightLinesMessage = "Data processing and highlighting in progress... "
+        const val settingsTitle = "OpenFace Output Folder Path (e.g. C:\\Users\\OtherFolders\\FolderWithCsvFile)"
 
         const val OK_CODE = 0
         const val NULL_CODE = -1
+
+        var openFaceOutputFilePath: String? = ""
     }
 
     object Variables {

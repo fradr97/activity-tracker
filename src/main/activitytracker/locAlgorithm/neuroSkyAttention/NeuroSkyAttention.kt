@@ -50,8 +50,6 @@ open class NeuroSkyAttention {
                     val timestamp = DateTime.now()
                     val time = timestamp.toString()
                         .replace("T", " ")
-                        .replace("+02:00", "")
-                        .replace("+01:00", "")
                     list.add(arrayOf(time, attention.toString()))
                 }
                 list

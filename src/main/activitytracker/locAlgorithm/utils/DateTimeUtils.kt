@@ -14,9 +14,9 @@ class DateTimeUtils {
 
     fun dataCreationAddedToTimeLaps(file: File, timeLapse: String): String {
         val dataCreationDateTime = getDataCreationFile(file)
-        val date = dataCreationDateTime!!.substring(0, 10)
-        val dataCreationTime = dataCreationDateTime.substring(11)
-        return date + " " + sumTimes(dataCreationTime, timeLapseToTime(timeLapse))
+        val date = dataCreationDateTime!!.substring(0, 10).trim()
+        val time = dataCreationDateTime.substring(11).trim()
+        return date + " " + sumTimes(time, timeLapseToTime(timeLapse))
     }
 
     private fun getDataCreationFile(file: File): String? {
@@ -33,7 +33,7 @@ class DateTimeUtils {
     }
 
     private fun sumTimes(time1: String, time2: String): String? {
-        sdf = SimpleDateFormat("HH:mm:ss:SS")
+        sdf = SimpleDateFormat("HH:mm:ss:SSS")
         sdf!!.timeZone = TimeZone.getTimeZone("UTC")
         val sum: Long
         val date1: Date
@@ -49,15 +49,15 @@ class DateTimeUtils {
     }
 
     private fun timeLapseToTime(timeLapse: String): String {
-        var timeLapse = timeLapse
-        timeLapse = timeLapse.trim { it <= ' ' }.replace(".", ":")
-        val occ = countOccurrence(timeLapse, ":")
+        var time = timeLapse
+        time = time.trim { it <= ' ' }.replace(".", ":")
+        val occ = countOccurrence(time, ":")
         if (occ == 1) {  //sec, mill
-            timeLapse = "00:00:$timeLapse"
+            time = "00:00:$time"
         } else if (occ == 2) {    //min, sec, mill
-            timeLapse = "00:$timeLapse"
+            time = "00:$time"
         }
-        return timeLapse
+        return time
     }
 
     private fun countOccurrence(string: String, type: String): Int {
@@ -70,33 +70,26 @@ class DateTimeUtils {
         return occ
     }
 
-    @Throws(ParseException::class)
-    fun getDateFromString(dateTime: String, format: String): Date? {
-        val formatter = SimpleDateFormat(format)
-        return formatter.parse(dateTime)
+    fun getDateFromString(dateTime: String?): Date? {
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+        val date: Date = try {
+            formatter.parse(dateTime)
+        } catch (e: ParseException) {
+            return getDateFromString("1900-01-01 00:00:00.000")
+        }
+        return date
     }
 
     /* checks if two dates are equal accepting a 1-second time difference margin */
-    @Throws(ParseException::class)
-    fun checkSameDates(date1: String, date2: String): Boolean {
-        return datesMilliesDiff(date1, date2) <= 1000
+    fun checkSameDates(date1: Date?, date2: Date?): Boolean {
+        return datesMilliesDiff(date1!!, date2!!) <= ERROR_MARGIN_BETWEEN_DATES
     }
 
-    @Throws(ParseException::class)
-    private fun datesMilliesDiff(date1: String, date2: String): Long {
-        sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
-        sdf!!.timeZone = TimeZone.getTimeZone("UTC")
+    private fun datesMilliesDiff(pluginDate: Date?, ofDate: Date?): Long {
+        return abs(pluginDate!!.time - ofDate!!.time)
+    }
 
-        val diff: Long
-        val dt1: Date
-        val dt2: Date
-        try {
-            dt1 = sdf!!.parse(date1)
-            dt2 = sdf!!.parse(date2)
-            diff = abs(dt2.time - dt1.time)
-        } catch (e: ParseException) {
-            return -9999    //Error
-        }
-        return diff
+    companion object {
+        const val ERROR_MARGIN_BETWEEN_DATES: Long = 1000
     }
 }
