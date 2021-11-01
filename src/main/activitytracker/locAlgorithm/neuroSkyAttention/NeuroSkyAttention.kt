@@ -56,6 +56,7 @@ open class NeuroSkyAttention {
             } else null
         }
 
+    //TODO: check this method
     val checkAttention: Int
         get() {
             if(!thinkGearSocketClient.isConnected)

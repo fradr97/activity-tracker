@@ -8,33 +8,23 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
-import kotlin.collections.ArrayList
 
-class ProcessOpenFaceOutput(outputFilePath: String?) {
-    private var file: File?
+class ProcessOpenFaceOutput(outputFolderPath: String, openFaceDatasetFilename: String) {
+    private val outputFile: File
     private val fileUtils: FileUtils = FileUtils()
 
-    val openFaceAUs: List<Array<String>>
-        get() {
-            val newOpenFaceList: MutableList<Array<String>> = ArrayList()
-            var newLine: Array<String>
-            val openFaceOutput = fileUtils.parseCSVFile(file.toString())
-            for (i in 1 until openFaceOutput!!.size) {  //position 0 is the header
-                newLine = getNewOFLine(openFaceOutput, i)
-                newOpenFaceList.add(newLine)
-            }
-            return newOpenFaceList
-        }
+    fun getOutputFile(): File {
+        return this.outputFile
+    }
 
-    private fun getNewOFLine(list: List<Array<String>>?, index: Int): Array<String> {
+    private fun getNewOFLine(file: File, list: List<Array<String>>?, index: Int): Array<String> {
         val dateTimeUtils = DateTimeUtils()
-        val dateTime = dateTimeUtils.dataCreationAddedToTimeLaps(file!!, list!![index][OF_TIMESTAMP])
+        val dateTime = dateTimeUtils.dataCreationAddedToTimeLaps(file, list!![index][OF_TIMESTAMP])
         return arrayOf(
             dateTime,
             list[index][OF_AU01_r],
             list[index][OF_AU02_r],
             list[index][OF_AU04_r],
-            list[index][OF_AU05_r],
             list[index][OF_AU05_r],
             list[index][OF_AU06_r],
             list[index][OF_AU07_r],
@@ -55,10 +45,34 @@ class ProcessOpenFaceOutput(outputFilePath: String?) {
     private fun defaultOpenFaceOutput(): File {
         val defaultOFOutputSource: InputStream = javaClass.getResourceAsStream("/open-face-output-stub/open-face-output-stub.csv")
         File(PathManager.getPluginsPath() + "/open-face-output-stub/").mkdirs()
-        val defaultOFOutputTarget = PathManager.getPluginsPath() + "/open-face-output-stub/open-face-output-stub.csv"
+        val defaultOFOutput = PathManager.getPluginsPath() + "/open-face-output-stub/open-face-output-stub.csv"
 
-        Files.copy(defaultOFOutputSource, Paths.get(defaultOFOutputTarget), StandardCopyOption.REPLACE_EXISTING)
-        return File(defaultOFOutputTarget)
+        Files.copy(defaultOFOutputSource, Paths.get(defaultOFOutput), StandardCopyOption.REPLACE_EXISTING)
+        return File(defaultOFOutput)
+    }
+
+    private fun mergeOpenFaceOutputs(outputFolderPath: String): MutableList<Array<String>>? {
+        val files: Array<File>? = fileUtils.getFilesFromFolder(outputFolderPath, "csv")
+        if (files != null) {
+            val newOpenFaceList: MutableList<Array<String>> = java.util.ArrayList()
+            var newLine: Array<String>
+
+            val headers = arrayOf(
+                "Timestamp", "AU01", "AU02", "AU04", "AU05", "AU06", "AU07", "AU09",
+                "AU10", "AU12", "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45"
+            )
+            newOpenFaceList.add(headers)
+
+            for (openFaceFile in files) {
+                val list: MutableList<Array<String>> = fileUtils.parseCSVFile(openFaceFile.toString()) as MutableList<Array<String>>
+                for (i in 1 until list.size) {  //position 0 is the header
+                    newLine = getNewOFLine(openFaceFile, list, i)
+                    newOpenFaceList.add(newLine)
+                }
+            }
+            return newOpenFaceList
+        }
+        return null
     }
 
     companion object {
@@ -83,9 +97,17 @@ class ProcessOpenFaceOutput(outputFilePath: String?) {
     }
 
     init {
-        file = fileUtils.getLastModifiedFile(outputFilePath, "csv")
+        //TODO: check if openFace folder output is empty
+        val dir = File(outputFolderPath)
+        if(outputFolderPath.trim() != "" && dir.exists()) {
+            val openFaceOutput: MutableList<Array<String>> = this.mergeOpenFaceOutputs(outputFolderPath) as MutableList<Array<String>>
+            fileUtils.writeFile(openFaceDatasetFilename, openFaceOutput, false)
+        }
 
-        if(file == null)
-            file = defaultOpenFaceOutput()
+        var fileTemp = File(openFaceDatasetFilename)
+
+        if (!fileTemp.exists()) fileTemp = defaultOpenFaceOutput()
+
+        outputFile = fileTemp
     }
 }

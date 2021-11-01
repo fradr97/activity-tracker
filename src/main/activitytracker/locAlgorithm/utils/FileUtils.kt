@@ -46,6 +46,7 @@ class FileUtils {
         writeFile(filepath, list, true)
     }
 
+    //TODO: to delete!
     fun getLastModifiedFile(filePath: String?, ext: String): File? {
         val lastModifiedFile: File
         val dir = File(filePath)
@@ -56,5 +57,18 @@ class FileUtils {
             files[0]
         } else return null
         return lastModifiedFile
+    }
+
+    fun getFilesFromFolder(folderPath: String, ext: String): Array<File>? {
+        var folder = folderPath
+        if (folder == "") return null
+        if (!folder.endsWith("\\")) folder += "\\"
+        folder = folder.replace("\\", "\\\\").trim { it <= ' ' }
+        val dir = File(folder)
+        val fileFilter: FileFilter = WildcardFileFilter("*.$ext")
+        val files = dir.listFiles(fileFilter) ?: return null
+        return if (files.isNotEmpty()) {
+            files
+        } else null
     }
 }

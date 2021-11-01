@@ -109,8 +109,7 @@ class PluginUI(
 
                         isButtonHighlightActive = true
                     } else {
-                        if(openFaceOutputFilePath?.trim() == "" ||
-                            openFaceOutputFilePath?.trim() == null)
+                        if(openFaceOutputFolderPath.trim() == "")
                             setOpenFaceOutputFolder()
 
                         Messages.showInfoMessage(waitingNeuroSkyMessage, waitingTitle)
@@ -242,10 +241,7 @@ class PluginUI(
     private fun setOpenFaceOutputFolder() {
         val jTextField = JTextField()
         Messages.showTextAreaDialog(jTextField, settingsTitle, "")
-        openFaceOutputFilePath = jTextField.text.replace("\\", "\\\\").trim()
-
-        if(openFaceOutputFilePath!!.substring(openFaceOutputFilePath!!.length - 1) != "\\")
-            openFaceOutputFilePath += "\\"
+        openFaceOutputFolderPath = jTextField.text.toString()
     }
 
     private fun checkProjectOrFile(event: AnActionEvent): Int {
@@ -276,7 +272,7 @@ class PluginUI(
     private fun monitoringOperations(document: Document, editor: Editor, fileOnFocus: String, operation: Int): Int {
         when (operation) {
             createAttentionDataset -> {
-                return processPluginOutput.createPluginOutput(fileOnFocus, openFaceOutputFilePath)
+                return processPluginOutput.createPluginOutput(fileOnFocus, openFaceOutputFolderPath)
             }
             highlightLines -> {
                 return processPluginOutput.getHighlightedAttentionLines(document, editor, fileOnFocus)
@@ -438,7 +434,7 @@ class PluginUI(
         const val OK_CODE = 0
         const val NULL_CODE = -1
 
-        var openFaceOutputFilePath: String? = ""
+        var openFaceOutputFolderPath: String = ""
     }
 
     object Variables {

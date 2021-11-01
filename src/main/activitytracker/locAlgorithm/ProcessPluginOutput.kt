@@ -9,6 +9,8 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
 import kotlin.math.roundToInt
+import com.intellij.openapi.application.PathManager
+
 
 class ProcessPluginOutput {
     private var pluginDataset: MutableList<Array<String>>
@@ -18,14 +20,14 @@ class ProcessPluginOutput {
 
     private val stringUtils: StringUtils
 
-    fun createPluginOutput(fileOnFocus: String?, openFaceOutputFilePath: String?): Int {
+    fun createPluginOutput(fileOnFocus: String?, openFaceOutputFolderPath: String): Int {
         val fileUtils = FileUtils()
-        val processOpenFaceOutput = ProcessOpenFaceOutput(openFaceOutputFilePath)
+        val processOpenFaceOutput = ProcessOpenFaceOutput(openFaceOutputFolderPath, OPEN_FACE_DATASET_FILENAME)
 
         val trackerOutput = this.processATOutput.getCleanedATOutput(ACTIVITY_TRACKER_DATASET_FILENAME, fileOnFocus!!)
 
         this.attentionValuesOutput = fileUtils.parseCSVFile(ATTENTION_DATASET_FILENAME) as MutableList<Array<String>>
-        this.openFaceAUsOutput = processOpenFaceOutput.openFaceAUs as MutableList<Array<String>>
+        this.openFaceAUsOutput = fileUtils.parseCSVFile(processOpenFaceOutput.getOutputFile().toString()) as MutableList<Array<String>>
         this.pluginDataset = updateLineNumbers(trackerOutput)
         this.deleteEmptyInstructionOutput()
         this.mergeAttentionAndAUsValues(this.attentionValuesOutput, this.openFaceAUsOutput)
@@ -272,7 +274,7 @@ class ProcessPluginOutput {
                 if (sameDates && attentionDate!!.before(pluginDate))
                     attention = attentionList[j][NEUROSKY_ATTENTION]
             }
-            for (k in openFaceAUsList.indices) {
+            for (k in 1 until openFaceAUsList.size) {
                 val ofDate = dateTimeUtils.getDateFromString(
                     stringUtils.replaceLastOccurrence(openFaceAUsList[k][OF_TIMESTAMP], ":", "."))
                 val sameDates = dateTimeUtils.checkSameDates(pluginDate, ofDate)
@@ -326,14 +328,36 @@ class ProcessPluginOutput {
                 au26,
                 au45
             )
+
             pluginDataset[i] = row
+
+            attention = "0"
+            au01 = defaultAUsDensity
+            au02 = defaultAUsDensity
+            au04 = defaultAUsDensity
+            au05 = defaultAUsDensity
+            au06 = defaultAUsDensity
+            au07 = defaultAUsDensity
+            au09 = defaultAUsDensity
+            au10 = defaultAUsDensity
+            au12 = defaultAUsDensity
+            au14 = defaultAUsDensity
+            au15 = defaultAUsDensity
+            au17 = defaultAUsDensity
+            au20 = defaultAUsDensity
+            au23 = defaultAUsDensity
+            au25 = defaultAUsDensity
+            au26 = defaultAUsDensity
+            au45 = defaultAUsDensity
         }
     }
 
     companion object {
-        val FINAL_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events-attention.csv"
-        val ACTIVITY_TRACKER_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/ide-events.csv"
-        val ATTENTION_DATASET_FILENAME = "${com.intellij.openapi.application.PathManager.getPluginsPath()}/activity-tracker/attention.csv"
+        private val BASE_DATASETS_PATH = "${PathManager.getPluginsPath()}/activity-tracker"
+        val FINAL_DATASET_FILENAME = "$BASE_DATASETS_PATH/ide-events-attention.csv"
+        val ACTIVITY_TRACKER_DATASET_FILENAME = "$BASE_DATASETS_PATH/ide-events.csv"
+        val ATTENTION_DATASET_FILENAME = "$BASE_DATASETS_PATH/attention.csv"
+        val OPEN_FACE_DATASET_FILENAME = "$BASE_DATASETS_PATH/open-face.csv"
 
         const val OK_CODE = 0
         const val NULL_CODE = -1
