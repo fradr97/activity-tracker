@@ -38,7 +38,7 @@ open class NeuroSkyAttention {
 
     val attention: MutableList<Array<String>>?
         get() {
-            var attention = 0
+            var attention = NO_ATTENTION
             val list: MutableList<Array<String>> = ArrayList()
             return if (thinkGearSocketClient.isDataAvailable) {
                 while (thinkGearSocketClient.isConnected && isStarted) {
@@ -56,22 +56,21 @@ open class NeuroSkyAttention {
             } else null
         }
 
-    //TODO: check this method
-    val checkAttention: Int
-        get() {
-            if(!thinkGearSocketClient.isConnected)
-                thinkGearSocketClient.connect()
+    fun checkAttention(): Int {
+        val thinkGearSocketClient = ThinkGearSocketClient()
+        if(!thinkGearSocketClient.isConnected)
+            thinkGearSocketClient.connect()
 
-            var attention = 0
-            return if (thinkGearSocketClient.isDataAvailable) {
-                val jsonString: String = thinkGearSocketClient.data
-                try {
-                    val jsonObject = JSONObject(jsonString).getJSONObject("eSense")
-                    attention = jsonObject.getInt("attention")
-                } catch (ignored: Exception) { }
-                attention
-            } else -1
-        }
+        var attention = NO_ATTENTION
+        return if (thinkGearSocketClient.isDataAvailable) {
+            val jsonString: String = thinkGearSocketClient.data
+            try {
+                val jsonObject = JSONObject(jsonString).getJSONObject("eSense")
+                attention = jsonObject.getInt("attention")
+            } catch (ignored: Exception) { }
+            attention
+        } else DATA_NOT_AVAILABLE
+    }
 
     @Throws(IOException::class)
     fun stopConnection() {
@@ -100,6 +99,7 @@ open class NeuroSkyAttention {
     companion object {
         private const val WAITING_TIME = 15
 
+        const val DATA_NOT_AVAILABLE = -1
         const val NO_ATTENTION = 0
         const val MIN_ATTENTION = 20
         const val LOW_ATTENTION = 40

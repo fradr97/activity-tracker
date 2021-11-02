@@ -8,27 +8,21 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 
 class ThinkGearSocketClient {
-    var host: String = DEFAULT_HOST
-    var port: Int = DEFAULT_PORT
-
     var isConnected: Boolean
         private set
     var channel: SocketChannel? = null
-    var `in`: Scanner? = null
+    var scanner: Scanner? = null
 
     @Throws(IOException::class)
     fun connect() {
         try {
             if (!isConnected) {
-                println("connect() - Starting new connection...")
-                channel = SocketChannel.open(InetSocketAddress(host, port))
+                channel = SocketChannel.open(InetSocketAddress(DEFAULT_HOST, DEFAULT_PORT))
                 val enc = StandardCharsets.US_ASCII.newEncoder()
                 val jsonCommand = "{\"enableRawOutput\": false, \"format\": \"Json\"}\n"
                 channel?.write(enc.encode(CharBuffer.wrap(jsonCommand)))
-                `in` = Scanner(channel)
+                scanner = Scanner(channel)
                 isConnected = true
-            } else {
-                println("connect() - Already connected...")
             }
         } catch (ex : Exception) {
             isConnected = false
@@ -37,19 +31,18 @@ class ThinkGearSocketClient {
 
     val isDataAvailable: Boolean
         get() = if (isConnected) {
-            `in`!!.hasNextLine()
+            scanner!!.hasNextLine()
         } else {
             false
         }
 
     val data: String
-        get() = `in`!!.nextLine()
+        get() = scanner!!.nextLine()
 
     @Throws(IOException::class)
     fun close() {
         if (isConnected) {
-            println("close() - Closing connection...")
-            `in`!!.close()
+            scanner!!.close()
             channel!!.close()
             isConnected = false
         }

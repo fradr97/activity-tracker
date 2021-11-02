@@ -64,6 +64,10 @@ class PluginUI(
         eventAnalyzer.runner = { task ->
             runInBackground("Analyzing activity log", task = { task() })
         }
+
+        val checkAttentionThread = Thread(CheckAttentionThread())
+        checkAttentionThread.start()
+
         return this
     }
 
@@ -205,10 +209,13 @@ class PluginUI(
             override fun actionPerformed(event: AnActionEvent) {
             }
             override fun update(event: AnActionEvent) {
-                attention = Variables.neuroSkyAttention.checkAttention
+                attention = Variables.checkAttentionValue //Variables.neuroSkyAttention.checkAttention()
 
                 icon = when (attention) {
-                    in NeuroSkyAttention.NO_ATTENTION + 1..NeuroSkyAttention.HIGH_ATTENTION -> {
+                    in NeuroSkyAttention.NO_ATTENTION..NeuroSkyAttention.LOW_ATTENTION -> {
+                        IconLoader.getIcon("AllIcons.Actions.IntentionBulbGrey")
+                    }
+                    in NeuroSkyAttention.LOW_ATTENTION + 1..NeuroSkyAttention.HIGH_ATTENTION -> {
                         IconLoader.getIcon("AllIcons.Actions.IntentionBulb")
                     }
                     in NeuroSkyAttention.HIGH_ATTENTION + 1..NeuroSkyAttention.MAX_ATTENTION -> {
@@ -440,11 +447,19 @@ class PluginUI(
     object Variables {
         val neuroSkyAttention = NeuroSkyAttention()
         var attentionList: MutableList<Array<String>>? = null
+        var checkAttentionValue: Int = 0
     }
 
     class AttentionThread : Runnable {
         override fun run() {
             Variables.attentionList = Variables.neuroSkyAttention.attention
+        }
+    }
+
+    class CheckAttentionThread : Runnable {
+        override fun run() {
+            while (true)
+                Variables.checkAttentionValue = Variables.neuroSkyAttention.checkAttention()
         }
     }
 }
