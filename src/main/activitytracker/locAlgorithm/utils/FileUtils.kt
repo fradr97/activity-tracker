@@ -3,10 +3,8 @@ package activitytracker.locAlgorithm.utils
 import com.opencsv.CSVReader
 import com.opencsv.CSVWriter
 import com.opencsv.exceptions.CsvException
-import org.apache.commons.io.comparator.LastModifiedFileComparator
 import org.apache.commons.io.filefilter.WildcardFileFilter
 import java.io.*
-import java.util.*
 
 
 class FileUtils {
@@ -44,19 +42,6 @@ class FileUtils {
     fun addCSVHeader(filepath: String?, list: MutableList<Array<String>>, headers: MutableList<Array<String>>) {
         writeFile(filepath, headers, false)
         writeFile(filepath, list, true)
-    }
-
-    //TODO: to delete!
-    fun getLastModifiedFile(filePath: String?, ext: String): File? {
-        val lastModifiedFile: File
-        val dir = File(filePath)
-        val fileFilter: FileFilter = WildcardFileFilter("*.$ext")
-        val files = dir.listFiles(fileFilter) ?: return null
-        lastModifiedFile = if (files.isNotEmpty()) {
-            Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE)
-            files[0]
-        } else return null
-        return lastModifiedFile
     }
 
     fun getFilesFromFolder(folderPath: String, ext: String): Array<File>? {

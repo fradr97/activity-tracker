@@ -244,7 +244,7 @@ class ProcessPluginOutput {
         val dateTimeUtils = DateTimeUtils()
 
         var attention = "0"
-        val defaultAUsDensity = "0.000"
+        val defaultAUsDensity = "0.00"
 
         var au01 = defaultAUsDensity
         var au02 = defaultAUsDensity

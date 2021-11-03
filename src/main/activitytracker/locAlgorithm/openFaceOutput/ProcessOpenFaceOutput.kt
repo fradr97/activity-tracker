@@ -97,15 +97,14 @@ class ProcessOpenFaceOutput(outputFolderPath: String, openFaceDatasetFilename: S
     }
 
     init {
-        //TODO: check if openFace folder output is empty
         val dir = File(outputFolderPath)
         if(outputFolderPath.trim() != "" && dir.exists()) {
-            val openFaceOutput: MutableList<Array<String>> = this.mergeOpenFaceOutputs(outputFolderPath) as MutableList<Array<String>>
-            fileUtils.writeFile(openFaceDatasetFilename, openFaceOutput, false)
+            val openFaceOutput: MutableList<Array<String>>? = this.mergeOpenFaceOutputs(outputFolderPath)
+            if(openFaceOutput != null)
+                fileUtils.writeFile(openFaceDatasetFilename, openFaceOutput, false)
         }
 
         var fileTemp = File(openFaceDatasetFilename)
-
         if (!fileTemp.exists()) fileTemp = defaultOpenFaceOutput()
 
         outputFile = fileTemp

@@ -203,15 +203,10 @@ class PluginUI(
 
     private fun registerAttentionIndicator(parentDisposable: Disposable) {
         var icon: Icon
-        var attention: Int
-
         val attentionIndicatorIcon = object: AnAction("Attention Indicator"), DumbAware {
-            override fun actionPerformed(event: AnActionEvent) {
-            }
+            override fun actionPerformed(event: AnActionEvent) { }
             override fun update(event: AnActionEvent) {
-                attention = Variables.checkAttentionValue //Variables.neuroSkyAttention.checkAttention()
-
-                icon = when (attention) {
+                icon = when (Variables.checkAttentionValue) {
                     in NeuroSkyAttention.NO_ATTENTION..NeuroSkyAttention.LOW_ATTENTION -> {
                         IconLoader.getIcon("AllIcons.Actions.IntentionBulbGrey")
                     }
