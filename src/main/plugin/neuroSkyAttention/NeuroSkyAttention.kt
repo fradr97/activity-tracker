@@ -10,8 +10,14 @@ open class NeuroSkyAttention {
     var isStarted = false
         private set
     private var timer: Int
+
     var checkAttention: Int = 0
     var time: String = ""
+
+    init {
+        thinkGearSocketClient.connect()
+        timer = 0
+    }
 
     private fun starting(): Boolean {
         if (thinkGearSocketClient.isDataAvailable) {
@@ -26,7 +32,7 @@ open class NeuroSkyAttention {
         return isStarted
     }
 
-    fun waitForStarting(): Boolean {
+    fun waitToStart(): Boolean {
         if(!thinkGearSocketClient.isConnected)
             thinkGearSocketClient.connect()
 
@@ -110,10 +116,5 @@ open class NeuroSkyAttention {
                 e.printStackTrace()
             }
         }
-    }
-
-    init {
-        thinkGearSocketClient.connect()
-        timer = 0
     }
 }

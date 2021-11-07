@@ -21,6 +21,8 @@ class ProcessComprehensionModeOutput {
 
         this.attentionValuesOutput = fileUtils.parseCSVFile(Config.ATTENTION_COMPREHENSION_MODE_DATASET_FILENAME) as MutableList<Array<String>>
         this.openFaceAUsOutput = fileUtils.parseCSVFile(processOpenFaceOutput.getOutputFile().toString()) as MutableList<Array<String>>
+
+        //TODO: se non compare mai il popup e il dataset è vuoto?
         this.popupOutput = fileUtils.parseCSVFile(Config.POPUP_COMPREHENSION_MODE_DATASET_FILENAME) as MutableList<Array<String>>
 
         val attentionPopupValues: MutableList<Array<String>> = this.mergeAttentionAndPopupValues(this.attentionValuesOutput, this.popupOutput)

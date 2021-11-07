@@ -107,7 +107,7 @@ class PluginUI(
                             stopCodingModeTracking()
                         } else {
                             Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
-                            val isStarted: Boolean = Variables.neuroSkyAttention.waitForStarting()
+                            val isStarted: Boolean = neuroSkyAttention.waitToStart()
 
                             if (isStarted) {
                                 Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
@@ -127,7 +127,7 @@ class PluginUI(
                             stopComprehensionModeTracking()
                         } else {
                             Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
-                            val isStarted: Boolean = Variables.neuroSkyAttention.waitForStarting()
+                            val isStarted: Boolean = neuroSkyAttention.waitToStart()
 
                             if (isStarted) {
                                 Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
@@ -172,14 +172,14 @@ class PluginUI(
 
     private fun stopCodingModeTracking() {
         plugin.toggleTracking()
-        Variables.neuroSkyAttention.stopConnection()
+        neuroSkyAttention.stopConnection()
 
         isButtonHighlightActive = true
     }
 
     private fun stopComprehensionModeTracking() {
         comprehensionModeIsTracking = false
-        Variables.neuroSkyAttention.stopConnection()
+        neuroSkyAttention.stopConnection()
 
         Messages.showInfoMessage(Config.DATA_PROCESSING_MESSAGE, Config.WAITING_TITLE)
         Thread.sleep(Config.SLEEP_BEFORE_PROCESSING.toLong())
@@ -251,7 +251,7 @@ class PluginUI(
         val attentionIndicatorIcon = object: AnAction("Attention Indicator"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) { }
             override fun update(event: AnActionEvent) {
-                icon = when (Variables.checkAttentionValue) {
+                icon = when (checkAttentionValue) {
                     in Config.NO_ATTENTION..Config.LOW_ATTENTION -> {
                         IconLoader.getIcon("AllIcons.Actions.IntentionBulbGrey")
                     }
@@ -268,20 +268,20 @@ class PluginUI(
                 event.presentation.icon = icon
 
                 if(comprehensionModeIsTracking) {
-                    val attention = Variables.neuroSkyAttention.getAttention()
-                    val time = Variables.neuroSkyAttention.getTimestamp()
+                    val attention = neuroSkyAttention.getAttention()
+                    val time = neuroSkyAttention.getTimestamp()
 
-                    if(attention < percentage(Variables.oldAttentionValue, 20)) {
+                    if(attention < percentage(oldAttentionValue, 20)) {
                         val response = showCheckAttentionDialog()
 
                         if(response == Messages.YES) {
-                            Variables.popupList!!.add(arrayOf(time, "Yes"))
+                            popupList!!.add(arrayOf(time, "Yes"))
                         }
                         else {
-                            Variables.popupList!!.add(arrayOf(time, "No"))
+                            popupList!!.add(arrayOf(time, "No"))
                         }
                     }
-                    Variables.oldAttentionValue = attention
+                    oldAttentionValue = attention
                 }
             }
         }
@@ -291,10 +291,10 @@ class PluginUI(
 
     @YesNoResult
     private fun showCheckAttentionDialog(): Int {
-        val message = "Did you get distracted? " + Variables.checkAttentionValue + "-" + Variables.oldAttentionValue
+        val message = "Did you get distracted?"
         val title = "Attention Check"
 
-        return Messages.showYesNoDialog(message, title, "Yes", "No",Messages.getQuestionIcon())
+        return Messages.showYesNoDialog(message, title, "Yes", "No", Messages.getQuestionIcon())
     }
 
     private fun registerSettings(parentDisposable: Disposable) {
@@ -358,16 +358,16 @@ class PluginUI(
         when (operation) {
             Config.CREATE_CODING_MODE_DATASET_OPERATION -> {
                 fileUtils.writeFile(Config.ATTENTION_CODING_MODE_DATASET_FILENAME,
-                    Variables.attentionList as MutableList<Array<String>>, true)
+                    attentionList as MutableList<Array<String>>, true)
 
                 return processCodingModeOutput.createOutputCodingMode(fileOnFocus, openFaceOutputFolderPath)
             }
             Config.CREATE_COMPREHENSION_MODE_DATASET_OPERATION -> {
                 fileUtils.writeFile(Config.ATTENTION_COMPREHENSION_MODE_DATASET_FILENAME,
-                    Variables.attentionList as MutableList<Array<String>>, true)
+                    attentionList as MutableList<Array<String>>, true)
 
                 fileUtils.writeFile(Config.POPUP_COMPREHENSION_MODE_DATASET_FILENAME,
-                    Variables.popupList as MutableList<Array<String>>, true)
+                    popupList as MutableList<Array<String>>, true)
 
                 return processComprehensionModeOutput.createOutputComprehensionMode(openFaceOutputFolderPath)
             }
@@ -515,6 +515,13 @@ class PluginUI(
         private var openFaceOutputFolderPath: String = ""
         private var mode: String = Config.CODING_MODE
 
+        val neuroSkyAttention = NeuroSkyAttention()
+        var attentionList: MutableList<Array<String>>? = null
+        var popupList: MutableList<Array<String>>? = ArrayList()
+
+        var checkAttentionValue: Int = 0
+        var oldAttentionValue: Int = 0
+
         fun percentage(value: Int, percentage: Int): Int {
             val valuePercentage: Int = (value * percentage) / 100
             return value - valuePercentage
@@ -522,24 +529,18 @@ class PluginUI(
     }
 
     object Variables {
-        val neuroSkyAttention = NeuroSkyAttention()
-        var attentionList: MutableList<Array<String>>? = null
-        var popupList: MutableList<Array<String>>? = ArrayList()
-
-        var checkAttentionValue: Int = 0
-        var oldAttentionValue: Int = 0
     }
 
     class AttentionThread : Runnable {
         override fun run() {
-            Variables.attentionList = Variables.neuroSkyAttention.attention
+            attentionList = neuroSkyAttention.attention
         }
     }
 
     class AttentionIndicatorThread : Runnable {
         override fun run() {
             while (true) {
-                Variables.checkAttentionValue = Variables.neuroSkyAttention.checkAttention()
+                checkAttentionValue = neuroSkyAttention.checkAttention()
             }
         }
     }
