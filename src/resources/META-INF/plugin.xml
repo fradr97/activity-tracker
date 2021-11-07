@@ -28,6 +28,6 @@
     <depends optional="true" config-file="tasks-integration.xml">com.intellij.tasks</depends>
 
     <applicationListeners>
-        <listener class="activitytracker.Main" topic="com.intellij.ide.AppLifecycleListener"/>
+        <listener class="plugin.Main" topic="com.intellij.ide.AppLifecycleListener"/>
     </applicationListeners>
 </idea-plugin>
