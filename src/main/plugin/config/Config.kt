@@ -20,9 +20,6 @@ class Config {
         val FINAL_COMPREHENSION_MODE_DATASET_FILENAME = "$COMPREHENSION_MODE_PATH/final-comprehension-mode-events.csv"
         val ATTENTION_COMPREHENSION_MODE_DATASET_FILENAME = "$COMPREHENSION_MODE_PATH/comprehension-mode-attention.csv"
         val OPEN_FACE_COMPREHENSION_MODE_DATASET_FILENAME = "$COMPREHENSION_MODE_PATH/comprehension-mode-open-face.csv"
-        val POPUP_COMPREHENSION_MODE_DATASET_FILENAME = "$COMPREHENSION_MODE_PATH/comprehension-mode-popup-responses.csv"
-
-        val MERDA = "$COMPREHENSION_MODE_PATH/merda.csv"
 
         /** ACTIVITY TRACKER DATASET INDEXES */
         const val AT_TIMESTAMP = 0
@@ -90,8 +87,6 @@ class Config {
         const val DEFAULT_HOST = "127.0.0.1"
         const val DEFAULT_PORT = 13854
 
-        const val WAITING_TIME = 15
-
         const val NO_ATTENTION = 0
         const val MIN_ATTENTION = 20
         const val LOW_ATTENTION = 40
@@ -100,13 +95,17 @@ class Config {
         const val MAX_ATTENTION = 100
 
         /** INDEXES FOR THE (OLD) ATTENTION LIST */
+        const val NEUROSKY_ERROR_ATTEMPTS = 3
+
         const val NEUROSKY_TIMESTAMP = 0
         const val NEUROSKY_ATTENTION = 1
         const val NEW_POPUP_RESPONSE = 2
+        const val BUFFER = 3
+        const val NEW_VARIANCE = 4
+        const val OLD_VARIANCE = 5
 
-        /** INDEXES FOR THE (OLD) POPUP LIST */
-        const val POPUP_TIMESTAMP = 0
-        const val POPUP_RESPONSE = 1
+        const val BUFFER_THRESHOLD = 5
+        const val ATTENTION_THRESHOLD = 3
 
         /** PLUGIN-UI VARIABLES */
         const val CREATE_CODING_MODE_DATASET_OPERATION = 0
@@ -121,12 +120,17 @@ class Config {
         const val WAITING_TITLE = "Please wait!"
         const val WAITING_NEUROSKY_MESSAGE = "Waiting NeuroSky MindWave headset... "
         const val RUNNING_TITLE = "Running!"
-        const val TRACKER_RUNNING_MESSAGE = "Tracker is running... "
+        const val TRACKER_RUNNING_MESSAGE = "The tracker is running... "
+        const val STOPPING_TITLE = "Stopping!"
+        const val TRACKER_STOPPING_MESSAGE = "The tracker is stopping..."
         const val NEUROSKY_NOT_WORKING_TITLE = "NeuroSky MindWave headset Not Working!"
         const val NEUROSKY_NOT_WORKING_MESSAGE = "Put on the NeuroSky MindWave headset and check that it is on!"
         const val DATA_PROCESSING_MESSAGE = "Data processing in progress... "
         const val SETTINGS_TITLE = "OpenFace Output Folder Path (e.g. C:\\Users\\OtherFolders\\FolderWithCsvFile)"
         const val SETTINGS_MESSAGE = "Set the OpenFace output folder path and select the comprehension or coding mode"
+
+        const val CHECK_ATTENTION_DIALOG_TITLE = "Attention Check"
+        const val CHECK_ATTENTION_DIALOG_MESSAGE = "Did you get distracted?"
 
         const val CODING_MODE: String = "Coding Mode"
         const val COMPREHENSION_MODE: String = "Comprehension Mode"

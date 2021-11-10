@@ -17,7 +17,6 @@ class ProcessCodingModeOutput {
     private val processATOutput: ProcessActivityTrackerOutput
     private lateinit var attentionValuesOutput: MutableList<Array<String>>
     private lateinit var openFaceAUsOutput: MutableList<Array<String>>
-
     private val stringUtils: StringUtils
 
     init {
@@ -250,7 +249,8 @@ class ProcessCodingModeOutput {
     private fun mergeAllValues(attentionList: MutableList<Array<String>>, openFaceAUsList: MutableList<Array<String>>) {
         val dateTimeUtils = DateTimeUtils()
 
-        var attention = "0"
+        var attention = Config.NULL_CODE.toString()
+        var oldAttention = Config.NULL_CODE.toString()
         val defaultAUsDensity = "0.00"
 
         var au01 = defaultAUsDensity
@@ -278,8 +278,10 @@ class ProcessCodingModeOutput {
                 val attentionDate = dateTimeUtils.getDateFromString(attentionList[j][Config.NEUROSKY_TIMESTAMP])
                 val sameDates = dateTimeUtils.checkSameDates(pluginDate, attentionDate)
 
-                if (sameDates && attentionDate!!.before(pluginDate))
+                if (sameDates && attentionDate!!.before(pluginDate)) {
                     attention = attentionList[j][Config.NEUROSKY_ATTENTION]
+                    oldAttention = attention
+                }
             }
             for (k in 1 until openFaceAUsList.size) {
                 val ofDate = dateTimeUtils.getDateFromString(
@@ -306,6 +308,8 @@ class ProcessCodingModeOutput {
                     au45 = openFaceAUsList[k][Config.OF_AU45]
                 }
             }
+            if(attention == Config.NULL_CODE.toString())
+                attention = oldAttention
 
             val row = arrayOf(
                 codingModeDataset[i][Config.TIMESTAMP],
@@ -335,10 +339,9 @@ class ProcessCodingModeOutput {
                 au26,
                 au45
             )
-
             codingModeDataset[i] = row
 
-            attention = "0"
+            attention = Config.NULL_CODE.toString()
             au01 = defaultAUsDensity
             au02 = defaultAUsDensity
             au04 = defaultAUsDensity

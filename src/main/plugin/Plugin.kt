@@ -26,7 +26,7 @@ class Plugin(
         pluginUI.update(state)
     }
 
-    fun toggleTracking() = updateState { it.copy(isTracking = !it.isTracking) }
+    fun toggleTracking() = updateState { it.copy(codingModeIsTracking = !it.codingModeIsTracking) }
 
     fun openTrackingLogFile(project: Project?) {
         if (project == null) return
@@ -47,7 +47,7 @@ class Plugin(
 
     private fun onStateChange(newState: State) {
         tracker.stopTracking()
-        if (newState.isTracking) {
+        if (newState.codingModeIsTracking) {
             tracker.startTracking(newState.toConfig())
         }
         pluginUI?.update(newState)
@@ -65,7 +65,7 @@ class Plugin(
 
 
     data class State(
-        val isTracking: Boolean,
+        val codingModeIsTracking: Boolean,
         val pollIdeState: Boolean,
         val pollIdeStateMs: Int,
         val trackIdeActions: Boolean,
@@ -75,7 +75,7 @@ class Plugin(
     ) {
         fun save(propertiesComponent: PropertiesComponent, id: String) {
             propertiesComponent.run {
-                setValue("$id-isTracking", isTracking, defaultValue.isTracking)
+                setValue("$id-isTracking", codingModeIsTracking, defaultValue.codingModeIsTracking)
                 setValue("$id-pollIdeState", pollIdeState, defaultValue.pollIdeState)
                 setValue("$id-pollIdeStateMs", pollIdeStateMs, defaultValue.pollIdeStateMs)
                 setValue("$id-trackIdeActions", trackIdeActions, defaultValue.trackIdeActions)
@@ -87,7 +87,7 @@ class Plugin(
 
         companion object {
             val defaultValue = State(
-                isTracking = false,
+                codingModeIsTracking = false,
                 pollIdeState = true,
                 pollIdeStateMs = 1000,
                 trackIdeActions = true,
@@ -99,7 +99,7 @@ class Plugin(
             fun load(propertiesComponent: PropertiesComponent, id: String): State {
                 return propertiesComponent.run {
                     State(
-                        getBoolean("$id-isTracking", defaultValue.isTracking),
+                        getBoolean("$id-isTracking", defaultValue.codingModeIsTracking),
                         getBoolean("$id-pollIdeState", defaultValue.pollIdeState),
                         getInt("$id-pollIdeStateMs", defaultValue.pollIdeStateMs),
                         getBoolean("$id-trackIdeActions", defaultValue.trackIdeActions),

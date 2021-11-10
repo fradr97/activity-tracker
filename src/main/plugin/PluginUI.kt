@@ -36,12 +36,13 @@ import plugin.locAlgorithm.codingMode.ProcessCodingModeOutput
 import plugin.locAlgorithm.comprehensionMode.ProcessComprehensionModeOutput
 import plugin.neuroSkyAttention.NeuroSkyAttention
 import plugin.utils.FileUtils
+import plugin.utils.MathUtils
 import java.awt.Component
 import java.awt.Point
 import java.awt.event.MouseEvent
 import java.util.*
 import javax.swing.Icon
-import kotlin.collections.ArrayList
+import javax.swing.JOptionPane
 
 
 class PluginUI(
@@ -51,7 +52,6 @@ class PluginUI(
     private val parentDisposable: Disposable
 ) {
     private val log = Logger.getInstance(PluginUI::class.java)
-    private var state = Plugin.State.defaultValue
     private val actionGroup: DefaultActionGroup by lazy { createActionGroup() }
     private val widgetId = "Activity Tracker Widget"
     private val processCodingModeOutput = ProcessCodingModeOutput()
@@ -61,7 +61,6 @@ class PluginUI(
     private lateinit var document: Document
     private var filePath: String = ""
     private var isButtonHighlightActive = true
-    var comprehensionModeIsTracking = false
 
     fun init(): PluginUI {
         plugin.setUI(this)
@@ -75,14 +74,14 @@ class PluginUI(
             runInBackground("Analyzing activity log", task = { task() })
         }
 
-        val attentionIndicatorThread = Thread(AttentionIndicatorThread())
-        attentionIndicatorThread.start()
+        val attentionThread = Thread(AttentionThread())
+        attentionThread.start()
 
         return this
     }
 
-    fun update(state: Plugin.State) {
-        this.state = state
+    fun update(pState: Plugin.State) {
+        state = pState
         updateWidget(widgetId)
     }
 
@@ -103,7 +102,7 @@ class PluginUI(
             override fun actionPerformed(event: AnActionEvent) {
                 if(checkIfFocusIsOnFile == Config.OK_CODE) {
                     if (mode == Config.CODING_MODE) {  /** CODING MODE **/
-                        if(state.isTracking) {
+                        if(state.codingModeIsTracking) {
                             stopCodingModeTracking()
                         } else {
                             Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
@@ -111,9 +110,6 @@ class PluginUI(
 
                             if (isStarted) {
                                 Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
-                                val attentionThread = Thread(AttentionThread())
-                                attentionThread.start()
-
                                 plugin.toggleTracking()
                                 monitoringOperations(document, editor, filePath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
                                 isButtonHighlightActive = false
@@ -132,10 +128,6 @@ class PluginUI(
                             if (isStarted) {
                                 Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
                                 comprehensionModeIsTracking = true
-
-                                val attentionThread = Thread(AttentionThread())
-                                attentionThread.start()
-
                                 monitoringOperations(document, editor, filePath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
                                 isButtonHighlightActive = false
                             } else {
@@ -149,7 +141,7 @@ class PluginUI(
                 checkIfFocusIsOnFile = checkProjectOrFile(event)
 
                 icon = if(checkIfFocusIsOnFile == Config.NULL_CODE) {
-                    if(state.isTracking) {
+                    if(state.codingModeIsTracking) {
                         stopCodingModeTracking()
                     }
                     if(comprehensionModeIsTracking) {
@@ -157,7 +149,15 @@ class PluginUI(
                     }
                     IconLoader.getIcon("AllIcons.Plugins.Disabled")
                 } else {
-                    if(state.isTracking || comprehensionModeIsTracking) {
+                    /** If there is a problem getting attention values */
+                    if(neuroSkyAttention.error()) {
+                        if(state.codingModeIsTracking)
+                            stopCodingModeTracking()
+                        if(comprehensionModeIsTracking)
+                            stopComprehensionModeTracking()
+                    }
+
+                    if(state.codingModeIsTracking || comprehensionModeIsTracking) {
                         IconLoader.getIcon("AllIcons.Actions.Pause")
                     } else {
                         IconLoader.getIcon("AllIcons.Debugger.Db_set_breakpoint")
@@ -171,19 +171,17 @@ class PluginUI(
     }
 
     private fun stopCodingModeTracking() {
+        Messages.showInfoMessage(Config.TRACKER_STOPPING_MESSAGE, Config.STOPPING_TITLE)
         plugin.toggleTracking()
-        neuroSkyAttention.stopConnection()
-
         isButtonHighlightActive = true
     }
 
     private fun stopComprehensionModeTracking() {
+        Messages.showInfoMessage(Config.TRACKER_STOPPING_MESSAGE, Config.STOPPING_TITLE)
         comprehensionModeIsTracking = false
-        neuroSkyAttention.stopConnection()
-
+        isButtonHighlightActive = true
         Messages.showInfoMessage(Config.DATA_PROCESSING_MESSAGE, Config.WAITING_TITLE)
         Thread.sleep(Config.SLEEP_BEFORE_PROCESSING.toLong())
-
         monitoringOperations(document, editor, filePath, Config.CREATE_COMPREHENSION_MODE_DATASET_OPERATION)
     }
 
@@ -194,7 +192,7 @@ class PluginUI(
             override fun actionPerformed(event: AnActionEvent) {
                 if(mode == Config.CODING_MODE) {
                     if (checkIfFocusIsOnFile == Config.OK_CODE) {
-                        if(!state.isTracking && isButtonHighlightActive) {
+                        if(!state.codingModeIsTracking && isButtonHighlightActive) {
                             Messages.showInfoMessage(Config.DATA_PROCESSING_MESSAGE, Config.WAITING_TITLE)
                             Thread.sleep(Config.SLEEP_BEFORE_PROCESSING.toLong())
 
@@ -214,7 +212,7 @@ class PluginUI(
                                 }
                             }
                         }
-                        else if(!state.isTracking && !isButtonHighlightActive) {
+                        else if(!state.codingModeIsTracking && !isButtonHighlightActive) {
                             val op = monitoringOperations(document, editor, filePath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
 
                             if(op == Config.NULL_CODE)
@@ -252,7 +250,7 @@ class PluginUI(
             override fun actionPerformed(event: AnActionEvent) { }
             override fun update(event: AnActionEvent) {
                 icon = when (checkAttentionValue) {
-                    in Config.NO_ATTENTION..Config.LOW_ATTENTION -> {
+                    in Config.NO_ATTENTION + 1..Config.LOW_ATTENTION -> {
                         IconLoader.getIcon("AllIcons.Actions.IntentionBulbGrey")
                     }
                     in Config.LOW_ATTENTION + 1..Config.HIGH_ATTENTION -> {
@@ -266,41 +264,16 @@ class PluginUI(
                     }
                 }
                 event.presentation.icon = icon
-
-                if(comprehensionModeIsTracking) {
-                    val attention = neuroSkyAttention.getAttention()
-                    val time = neuroSkyAttention.getTimestamp()
-
-                    if(attention < percentage(oldAttentionValue, 20)) {
-                        val response = showCheckAttentionDialog()
-
-                        if(response == Messages.YES) {
-                            popupList!!.add(arrayOf(time, "Yes"))
-                        }
-                        else {
-                            popupList!!.add(arrayOf(time, "No"))
-                        }
-                    }
-                    oldAttentionValue = attention
-                }
             }
         }
         registerAction("Attention Indicator", "", "ToolbarRunGroup",
             "Attention Indicator", parentDisposable, attentionIndicatorIcon)
     }
 
-    @YesNoResult
-    private fun showCheckAttentionDialog(): Int {
-        val message = "Did you get distracted?"
-        val title = "Attention Check"
-
-        return Messages.showYesNoDialog(message, title, "Yes", "No", Messages.getQuestionIcon())
-    }
-
     private fun registerSettings(parentDisposable: Disposable) {
         val buttonSettings = object: AnAction("Settings"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
-                if(!state.isTracking && !comprehensionModeIsTracking)
+                if(!state.codingModeIsTracking && !comprehensionModeIsTracking)
                     setOpenFaceOutputFolderAndMode()
             }
             override fun update(event: AnActionEvent) {
@@ -320,7 +293,6 @@ class PluginUI(
 
         try {
             openFaceOutputFolderPath = settings.getFirst().toString()
-
             mode = if(settings.getSecond() == true) {
                 Config.COMPREHENSION_MODE
             } else Config.CODING_MODE
@@ -359,16 +331,11 @@ class PluginUI(
             Config.CREATE_CODING_MODE_DATASET_OPERATION -> {
                 fileUtils.writeFile(Config.ATTENTION_CODING_MODE_DATASET_FILENAME,
                     attentionList as MutableList<Array<String>>, true)
-
                 return processCodingModeOutput.createOutputCodingMode(fileOnFocus, openFaceOutputFolderPath)
             }
             Config.CREATE_COMPREHENSION_MODE_DATASET_OPERATION -> {
                 fileUtils.writeFile(Config.ATTENTION_COMPREHENSION_MODE_DATASET_FILENAME,
                     attentionList as MutableList<Array<String>>, true)
-
-                fileUtils.writeFile(Config.POPUP_COMPREHENSION_MODE_DATASET_FILENAME,
-                    popupList as MutableList<Array<String>>, true)
-
                 return processComprehensionModeOutput.createOutputComprehensionMode(openFaceOutputFolderPath)
             }
             Config.HIGHLIGHT_LINES_OPERATION -> {
@@ -385,7 +352,7 @@ class PluginUI(
 
     private fun registerWidget(parentDisposable: Disposable) {
         val presentation = object: StatusBarWidget.TextPresentation {
-            override fun getText() = "Activity tracker: " + (if (state.isTracking) "on" else "off")
+            override fun getText() = "Activity tracker: " + (if (state.codingModeIsTracking) "on" else "off")
             override fun getAlignment() = Component.CENTER_ALIGNMENT
             override fun getTooltipText() = "Click to open menu"
             override fun getClickConsumer() = Consumer { mouseEvent: MouseEvent ->
@@ -511,36 +478,88 @@ class PluginUI(
     }
 
     companion object {
+        private var comprehensionModeIsTracking = false
         private var checkIfFocusIsOnFile = Config.NULL_CODE
         private var openFaceOutputFolderPath: String = ""
         private var mode: String = Config.CODING_MODE
 
+        var state = Plugin.State.defaultValue
         val neuroSkyAttention = NeuroSkyAttention()
         var attentionList: MutableList<Array<String>>? = null
-        var popupList: MutableList<Array<String>>? = ArrayList()
-
         var checkAttentionValue: Int = 0
-        var oldAttentionValue: Int = 0
 
-        fun percentage(value: Int, percentage: Int): Int {
-            val valuePercentage: Int = (value * percentage) / 100
-            return value - valuePercentage
+        @YesNoResult
+        fun showCheckAttentionDialog(): Int {
+            return JOptionPane.showConfirmDialog(null,
+                Config.CHECK_ATTENTION_DIALOG_MESSAGE,
+                Config.CHECK_ATTENTION_DIALOG_TITLE,
+                JOptionPane.YES_NO_OPTION)
         }
-    }
-
-    object Variables {
     }
 
     class AttentionThread : Runnable {
         override fun run() {
-            attentionList = neuroSkyAttention.attention
-        }
-    }
+            val list: MutableList<Array<String>> = ArrayList()
+            val math = MathUtils()
+            val buffer = ArrayList<Int>()
 
-    class AttentionIndicatorThread : Runnable {
-        override fun run() {
-            while (true) {
-                checkAttentionValue = neuroSkyAttention.checkAttention()
+            var newStandardDev: Int
+            var oldStandardDev = 0
+
+            while(neuroSkyAttention.isConnected()) {
+                neuroSkyAttention.monitorAttention()
+
+                val attention = neuroSkyAttention.getAttentionValue()
+                checkAttentionValue = attention /** to attention indicator */
+
+                val dateTimeUtils = plugin.utils.DateTimeUtils()
+                var popupResponse = ""
+
+                if(state.codingModeIsTracking) {
+                    list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString()))
+                    attentionList = list
+                }
+
+                var saveBuffer = ""
+                var saveNewStandardDev = ""
+                var saveOldStandardDev = ""
+
+                if(comprehensionModeIsTracking) {
+                    if (buffer.size == Config.BUFFER_THRESHOLD) {
+                        println(buffer)
+                        saveBuffer = buffer.toString()
+                        val avg = math.avg(buffer)
+                        newStandardDev = math.standardDeviation(buffer, avg)
+                        val check = neuroSkyAttention.isAttentionDropped(newStandardDev, oldStandardDev)
+
+                        println("$check: New: $newStandardDev - Old: $oldStandardDev")
+                        saveNewStandardDev = (newStandardDev*newStandardDev).toString() + "(" + newStandardDev.toString() + ")"
+                        saveOldStandardDev = (oldStandardDev*oldStandardDev).toString() + "(" + oldStandardDev.toString() + ")"
+
+                        if (check) {
+                            val response = showCheckAttentionDialog()
+                            popupResponse = if(response == JOptionPane.YES_OPTION) {
+                                "Yes"
+                            } else {
+                                "No";
+                            }
+                            buffer.clear()
+                        }
+                        else {
+                            popupResponse = ""
+                            saveBuffer = ""
+                            saveNewStandardDev = ""
+                            saveOldStandardDev = ""
+                        }
+                        oldStandardDev = math.standardDeviation(buffer, avg)
+                    }
+                    list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString(), popupResponse,
+                        saveBuffer, saveNewStandardDev, saveOldStandardDev))
+                    attentionList = list
+
+                    neuroSkyAttention.updateBuffer(buffer, attention)
+                    Thread.sleep(1000)
+                }
             }
         }
     }

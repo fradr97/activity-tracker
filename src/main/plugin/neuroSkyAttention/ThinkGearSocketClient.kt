@@ -14,6 +14,10 @@ class ThinkGearSocketClient {
     var channel: SocketChannel? = null
     var scanner: Scanner? = null
 
+    init {
+        isConnected = false
+    }
+
     @Throws(IOException::class)
     fun connect() {
         try {
@@ -47,9 +51,5 @@ class ThinkGearSocketClient {
             channel!!.close()
             isConnected = false
         }
-    }
-
-    init {
-        isConnected = false
     }
 }

@@ -5,14 +5,14 @@ import plugin.openFaceAUs.ProcessOpenFaceOutput
 import plugin.utils.DateTimeUtils
 import plugin.utils.FileUtils
 import plugin.utils.StringUtils
+import java.util.*
+import kotlin.collections.ArrayList
 
-//TODO: se riprendo il monitoraggio, non salva nulla
+//TODO: Risalva nuovamente i dati precedenti!!
 class ProcessComprehensionModeOutput {
     private var comprehensionModeDataset: MutableList<Array<String>> = ArrayList()
     private lateinit var attentionValuesOutput: MutableList<Array<String>>
     private lateinit var openFaceAUsOutput: MutableList<Array<String>>
-    private lateinit var popupOutput: MutableList<Array<String>>
-
     private val stringUtils: StringUtils = StringUtils()
 
     fun createOutputComprehensionMode(openFaceOutputFolderPath: String): Int {
@@ -21,12 +21,7 @@ class ProcessComprehensionModeOutput {
 
         this.attentionValuesOutput = fileUtils.parseCSVFile(Config.ATTENTION_COMPREHENSION_MODE_DATASET_FILENAME) as MutableList<Array<String>>
         this.openFaceAUsOutput = fileUtils.parseCSVFile(processOpenFaceOutput.getOutputFile().toString()) as MutableList<Array<String>>
-
-        //TODO: se non compare mai il popup e il dataset è vuoto?
-        this.popupOutput = fileUtils.parseCSVFile(Config.POPUP_COMPREHENSION_MODE_DATASET_FILENAME) as MutableList<Array<String>>
-
-        val attentionPopupValues: MutableList<Array<String>> = this.mergeAttentionAndPopupValues(this.attentionValuesOutput, this.popupOutput)
-        this.mergeAttentionAndAUsValues(attentionPopupValues, this.openFaceAUsOutput)
+        this.mergeAttentionAndAUsValues(attentionValuesOutput, this.openFaceAUsOutput)
 
         fileUtils.addCSVHeader(
             Config.FINAL_COMPREHENSION_MODE_DATASET_FILENAME,
@@ -38,47 +33,37 @@ class ProcessComprehensionModeOutput {
         val list: MutableList<Array<String>> = java.util.ArrayList()
         val headers = arrayOf(
             "Timestamp", "Attention", "AU01", "AU02", "AU04", "AU05", "AU06", "AU07", "AU09",
-            "AU10", "AU12", "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45", "PopupResponse"
+            "AU10", "AU12", "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45", "PopupResponse",
+            "Buffer", "NewVariance (StandardDev)", "OldVariance (StandardDev)"
         )
         list.add(headers)
         return list
     }
 
-    private fun mergeAttentionAndPopupValues(attentionList: MutableList<Array<String>>, popupList: MutableList<Array<String>>): MutableList<Array<String>> {
-        val attentionPopupList: MutableList<Array<String>> = ArrayList()
+    private fun indexToPopupMatch(openFaceAUsList: MutableList<Array<String>>, popupTimestamp: Date): Int {
+        val dateTimeUtils = DateTimeUtils()
 
-        val empty = ""
-        var response = empty
+        for (i in 1 until openFaceAUsList.size) {
+            val ofDate = dateTimeUtils.getDateFromString(
+                stringUtils.replaceLastOccurrence(openFaceAUsList[i][Config.OF_TIMESTAMP], ":", "."))
+            val sameDates = dateTimeUtils.checkSameDates(ofDate, popupTimestamp)
 
-        for (i in attentionList.indices) {
-            val attentionDate = attentionList[i][Config.NEUROSKY_TIMESTAMP]
-
-            for (j in popupList.indices) {
-                val popupDate = popupList[j][Config.POPUP_TIMESTAMP]
-
-                if (attentionDate == popupDate)
-                    response = popupList[j][Config.POPUP_RESPONSE]
+            if(sameDates && popupTimestamp.before(ofDate)) {
+                return i
             }
-
-            val row = arrayOf(
-                attentionList[i][Config.NEUROSKY_TIMESTAMP],
-                attentionList[i][Config.NEUROSKY_ATTENTION],
-                response
-            )
-
-            attentionPopupList.add(row)
-            response = empty
         }
-        return attentionPopupList
+        return Config.NULL_CODE
     }
 
-    //TODO: i valori delle risposte si duplicano causa margine di 1 seconda tra date!
     private fun mergeAttentionAndAUsValues(attentionPopupList: MutableList<Array<String>>, openFaceAUsList: MutableList<Array<String>>) {
         val dateTimeUtils = DateTimeUtils()
 
         val empty = ""
         var attention = empty
         var popupResponse = empty
+        var buffer = empty
+        var newVariance = empty
+        var oldVariance = empty
 
         for (i in 1 until openFaceAUsList.size) {
             val ofDate = dateTimeUtils.getDateFromString(
@@ -90,10 +75,21 @@ class ProcessComprehensionModeOutput {
 
                 if (sameDates && attentionDate!!.before(ofDate)) {
                     attention = attentionPopupList[j][Config.NEUROSKY_ATTENTION]
-                    popupResponse = attentionPopupList[j][Config.NEW_POPUP_RESPONSE]
+
+                    val index = indexToPopupMatch(openFaceAUsList, attentionDate)
+                    if(i == index) {
+                        popupResponse = attentionPopupList[j][Config.NEW_POPUP_RESPONSE]
+                        buffer = attentionPopupList[j][Config.BUFFER]
+                        newVariance = attentionPopupList[j][Config.NEW_VARIANCE]
+                        oldVariance = attentionPopupList[j][Config.OLD_VARIANCE]
+                    } else {
+                        popupResponse = empty
+                        buffer = empty
+                        newVariance = empty
+                        oldVariance = empty
+                    }
                 }
             }
-
             val row = arrayOf(
                 openFaceAUsList[i][Config.TIMESTAMP],
                 attention,
@@ -114,7 +110,10 @@ class ProcessComprehensionModeOutput {
                 openFaceAUsList[i][Config.OF_AU25],
                 openFaceAUsList[i][Config.OF_AU26],
                 openFaceAUsList[i][Config.OF_AU45],
-                popupResponse
+                popupResponse,
+                buffer,
+                newVariance,
+                oldVariance
             )
 
             if(attention != empty)
@@ -122,6 +121,9 @@ class ProcessComprehensionModeOutput {
 
             attention = empty
             popupResponse = empty
+            buffer = empty
+            newVariance = empty
+            oldVariance = empty
         }
     }
 }

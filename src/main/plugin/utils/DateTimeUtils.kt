@@ -1,5 +1,6 @@
 package plugin.utils
 
+import org.joda.time.DateTime
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -85,8 +86,13 @@ class DateTimeUtils {
         return datesMilliesDiff(date1!!, date2!!) <= ERROR_MARGIN_BETWEEN_DATES
     }
 
-    private fun datesMilliesDiff(pluginDate: Date?, ofDate: Date?): Long {
+    fun datesMilliesDiff(pluginDate: Date?, ofDate: Date?): Long {
         return abs(pluginDate!!.time - ofDate!!.time)
+    }
+
+    fun getTimestamp(): String {
+        val timestamp = DateTime.now()
+        return timestamp.toString().replace("T", " ")
     }
 
     companion object {
