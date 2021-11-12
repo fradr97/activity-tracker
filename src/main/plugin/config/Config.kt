@@ -87,6 +87,7 @@ class Config {
         const val DEFAULT_HOST = "127.0.0.1"
         const val DEFAULT_PORT = 13854
 
+        const val NO_ATTENTION_VALUE_OBTAINED = -1
         const val NO_ATTENTION = 0
         const val MIN_ATTENTION = 20
         const val LOW_ATTENTION = 40
@@ -134,5 +135,8 @@ class Config {
 
         const val CODING_MODE: String = "Coding Mode"
         const val COMPREHENSION_MODE: String = "Comprehension Mode"
+
+        /** DateTime*/
+        const val DEFAULT_DATE = "1900-01-01 00:00:00.000"
     }
 }

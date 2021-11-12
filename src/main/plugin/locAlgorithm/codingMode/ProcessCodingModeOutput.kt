@@ -237,7 +237,8 @@ class ProcessCodingModeOutput {
         var occurrences = 0
         for (row in list) {
             if (fileOnFocus == row[Config.FILENAME] &&
-                line == row[Config.LINE].toInt()
+                line == row[Config.LINE].toInt() &&
+                row[Config.ATTENTION] != Config.NO_ATTENTION_VALUE_OBTAINED.toString()  /* excludes any errors (e.g. headset off) */
             ) {
                 sum += row[Config.ATTENTION].toInt()
                 occurrences++
@@ -249,8 +250,7 @@ class ProcessCodingModeOutput {
     private fun mergeAllValues(attentionList: MutableList<Array<String>>, openFaceAUsList: MutableList<Array<String>>) {
         val dateTimeUtils = DateTimeUtils()
 
-        var attention = Config.NULL_CODE.toString()
-        var oldAttention = Config.NULL_CODE.toString()
+        var attention = Config.NO_ATTENTION_VALUE_OBTAINED.toString()
         val defaultAUsDensity = "0.00"
 
         var au01 = defaultAUsDensity
@@ -280,7 +280,6 @@ class ProcessCodingModeOutput {
 
                 if (sameDates && attentionDate!!.before(pluginDate)) {
                     attention = attentionList[j][Config.NEUROSKY_ATTENTION]
-                    oldAttention = attention
                 }
             }
             for (k in 1 until openFaceAUsList.size) {
@@ -308,8 +307,6 @@ class ProcessCodingModeOutput {
                     au45 = openFaceAUsList[k][Config.OF_AU45]
                 }
             }
-            if(attention == Config.NULL_CODE.toString())
-                attention = oldAttention
 
             val row = arrayOf(
                 codingModeDataset[i][Config.TIMESTAMP],
@@ -341,7 +338,6 @@ class ProcessCodingModeOutput {
             )
             codingModeDataset[i] = row
 
-            attention = Config.NULL_CODE.toString()
             au01 = defaultAUsDensity
             au02 = defaultAUsDensity
             au04 = defaultAUsDensity

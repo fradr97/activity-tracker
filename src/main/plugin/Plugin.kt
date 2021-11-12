@@ -65,7 +65,7 @@ class Plugin(
 
 
     data class State(
-        val codingModeIsTracking: Boolean,
+        var codingModeIsTracking: Boolean,
         val pollIdeState: Boolean,
         val pollIdeStateMs: Int,
         val trackIdeActions: Boolean,

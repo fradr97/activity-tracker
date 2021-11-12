@@ -32,7 +32,7 @@ open class NeuroSkyAttention {
                 attention = jsonObject.getInt("attention")
                 error = 0
             }
-        } catch (ignored: Exception) {
+        } catch (ex: Exception) {
             error += 1
         }
     }
@@ -55,7 +55,7 @@ open class NeuroSkyAttention {
 
     fun error(): Boolean {
         if(this.error >= Config.NEUROSKY_ERROR_ATTEMPTS) {
-            attention = Config.NULL_CODE
+            attention = Config.NO_ATTENTION_VALUE_OBTAINED
             return true
         }
         return false

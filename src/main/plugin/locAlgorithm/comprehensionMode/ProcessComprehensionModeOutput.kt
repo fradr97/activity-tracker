@@ -8,7 +8,6 @@ import plugin.utils.StringUtils
 import java.util.*
 import kotlin.collections.ArrayList
 
-//TODO: Risalva nuovamente i dati precedenti!!
 class ProcessComprehensionModeOutput {
     private var comprehensionModeDataset: MutableList<Array<String>> = ArrayList()
     private lateinit var attentionValuesOutput: MutableList<Array<String>>
@@ -21,7 +20,7 @@ class ProcessComprehensionModeOutput {
 
         this.attentionValuesOutput = fileUtils.parseCSVFile(Config.ATTENTION_COMPREHENSION_MODE_DATASET_FILENAME) as MutableList<Array<String>>
         this.openFaceAUsOutput = fileUtils.parseCSVFile(processOpenFaceOutput.getOutputFile().toString()) as MutableList<Array<String>>
-        this.mergeAttentionAndAUsValues(attentionValuesOutput, this.openFaceAUsOutput)
+        this.mergeAttentionAndAUsValues(attentionValuesOutput, openFaceAUsOutput)
 
         fileUtils.addCSVHeader(
             Config.FINAL_COMPREHENSION_MODE_DATASET_FILENAME,

@@ -1,6 +1,7 @@
 package plugin.utils
 
 import org.joda.time.DateTime
+import plugin.config.Config
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -29,7 +30,7 @@ class DateTimeUtils {
             val simpleDateFormat = SimpleDateFormat(pattern)
             simpleDateFormat.format(Date(time.toMillis()))
         } catch (e: IOException) {
-            "0000-00-00 00:00:00:000"
+            Config.DEFAULT_DATE
         }
     }
 
@@ -76,7 +77,7 @@ class DateTimeUtils {
         val date: Date = try {
             formatter.parse(dateTime)
         } catch (e: ParseException) {
-            return getDateFromString("1900-01-01 00:00:00.000")
+            return getDateFromString(Config.DEFAULT_DATE)
         }
         return date
     }

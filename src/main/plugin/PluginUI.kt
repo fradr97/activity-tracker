@@ -73,7 +73,7 @@ class PluginUI(
         eventAnalyzer.runner = { task ->
             runInBackground("Analyzing activity log", task = { task() })
         }
-
+        state.codingModeIsTracking = false
         val attentionThread = Thread(AttentionThread())
         attentionThread.start()
 
@@ -105,6 +105,7 @@ class PluginUI(
                         if(state.codingModeIsTracking) {
                             stopCodingModeTracking()
                         } else {
+                            attentionList?.clear()
                             Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
                             val isStarted: Boolean = neuroSkyAttention.waitToStart()
 
@@ -122,6 +123,7 @@ class PluginUI(
                         if(comprehensionModeIsTracking) {
                             stopComprehensionModeTracking()
                         } else {
+                            attentionList?.clear()
                             Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
                             val isStarted: Boolean = neuroSkyAttention.waitToStart()
 
@@ -149,12 +151,15 @@ class PluginUI(
                     }
                     IconLoader.getIcon("AllIcons.Plugins.Disabled")
                 } else {
-                    /** If there is a problem getting attention values */
+                    /** If there is a problem getting attention values
+                     * (e.g. headset off during tracking) */
                     if(neuroSkyAttention.error()) {
-                        if(state.codingModeIsTracking)
+                        if(state.codingModeIsTracking) {
                             stopCodingModeTracking()
-                        if(comprehensionModeIsTracking)
+                        }
+                        if(comprehensionModeIsTracking) {
                             stopComprehensionModeTracking()
+                        }
                     }
 
                     if(state.codingModeIsTracking || comprehensionModeIsTracking) {
@@ -249,7 +254,7 @@ class PluginUI(
         val attentionIndicatorIcon = object: AnAction("Attention Indicator"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) { }
             override fun update(event: AnActionEvent) {
-                icon = when (checkAttentionValue) {
+                icon = when (attentionIndicator) {
                     in Config.NO_ATTENTION + 1..Config.LOW_ATTENTION -> {
                         IconLoader.getIcon("AllIcons.Actions.IntentionBulbGrey")
                     }
@@ -486,7 +491,7 @@ class PluginUI(
         var state = Plugin.State.defaultValue
         val neuroSkyAttention = NeuroSkyAttention()
         var attentionList: MutableList<Array<String>>? = null
-        var checkAttentionValue: Int = 0
+        var attentionIndicator: Int = 0
 
         @YesNoResult
         fun showCheckAttentionDialog(): Int {
@@ -510,7 +515,7 @@ class PluginUI(
                 neuroSkyAttention.monitorAttention()
 
                 val attention = neuroSkyAttention.getAttentionValue()
-                checkAttentionValue = attention /** to attention indicator */
+                attentionIndicator = attention /** update attention indicator */
 
                 val dateTimeUtils = plugin.utils.DateTimeUtils()
                 var popupResponse = ""
@@ -526,13 +531,11 @@ class PluginUI(
 
                 if(comprehensionModeIsTracking) {
                     if (buffer.size == Config.BUFFER_THRESHOLD) {
-                        println(buffer)
                         saveBuffer = buffer.toString()
                         val avg = math.avg(buffer)
                         newStandardDev = math.standardDeviation(buffer, avg)
                         val check = neuroSkyAttention.isAttentionDropped(newStandardDev, oldStandardDev)
 
-                        println("$check: New: $newStandardDev - Old: $oldStandardDev")
                         saveNewStandardDev = (newStandardDev*newStandardDev).toString() + "(" + newStandardDev.toString() + ")"
                         saveOldStandardDev = (oldStandardDev*oldStandardDev).toString() + "(" + oldStandardDev.toString() + ")"
 
