@@ -32,8 +32,8 @@ class ProcessComprehensionModeOutput {
         val list: MutableList<Array<String>> = java.util.ArrayList()
         val headers = arrayOf(
             "Timestamp", "Attention", "AU01", "AU02", "AU04", "AU05", "AU06", "AU07", "AU09",
-            "AU10", "AU12", "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45", "PopupResponse",
-            "Buffer", "NewVariance (StandardDev)", "OldVariance (StandardDev)"
+            "AU10", "AU12", "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45", "Question",
+            "UserAnswer", "Buffer", "NewVariance (StandardDev)", "OldVariance (StandardDev)"
         )
         list.add(headers)
         return list
@@ -59,7 +59,8 @@ class ProcessComprehensionModeOutput {
 
         val empty = ""
         var attention = empty
-        var popupResponse = empty
+        var question = empty
+        var userAnswer = empty
         var buffer = empty
         var newVariance = empty
         var oldVariance = empty
@@ -77,12 +78,14 @@ class ProcessComprehensionModeOutput {
 
                     val index = indexToPopupMatch(openFaceAUsList, attentionDate)
                     if(i == index) {
-                        popupResponse = attentionPopupList[j][Config.NEW_POPUP_RESPONSE]
+                        question = attentionPopupList[j][Config.POPUP_QUESTION]
+                        userAnswer = attentionPopupList[j][Config.POPUP_USER_ANSWER]
                         buffer = attentionPopupList[j][Config.BUFFER]
                         newVariance = attentionPopupList[j][Config.NEW_VARIANCE]
                         oldVariance = attentionPopupList[j][Config.OLD_VARIANCE]
                     } else {
-                        popupResponse = empty
+                        question = empty
+                        userAnswer = empty
                         buffer = empty
                         newVariance = empty
                         oldVariance = empty
@@ -109,7 +112,8 @@ class ProcessComprehensionModeOutput {
                 openFaceAUsList[i][Config.OF_AU25],
                 openFaceAUsList[i][Config.OF_AU26],
                 openFaceAUsList[i][Config.OF_AU45],
-                popupResponse,
+                question,
+                userAnswer,
                 buffer,
                 newVariance,
                 oldVariance
@@ -119,7 +123,8 @@ class ProcessComprehensionModeOutput {
                 comprehensionModeDataset.add(row)
 
             attention = empty
-            popupResponse = empty
+            question = empty
+            userAnswer = empty
             buffer = empty
             newVariance = empty
             oldVariance = empty

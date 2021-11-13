@@ -34,6 +34,7 @@ import plugin.config.Config
 import plugin.locAlgorithm.codingMode.LineHighlighter
 import plugin.locAlgorithm.codingMode.ProcessCodingModeOutput
 import plugin.locAlgorithm.comprehensionMode.ProcessComprehensionModeOutput
+import plugin.locAlgorithm.comprehensionMode.ProcessPopupQuestions
 import plugin.neuroSkyAttention.NeuroSkyAttention
 import plugin.utils.FileUtils
 import plugin.utils.MathUtils
@@ -41,8 +42,7 @@ import java.awt.Component
 import java.awt.Point
 import java.awt.event.MouseEvent
 import java.util.*
-import javax.swing.Icon
-import javax.swing.JOptionPane
+import javax.swing.*
 
 
 class PluginUI(
@@ -56,11 +56,6 @@ class PluginUI(
     private val widgetId = "Activity Tracker Widget"
     private val processCodingModeOutput = ProcessCodingModeOutput()
     private val processComprehensionModeOutput = ProcessComprehensionModeOutput()
-
-    private lateinit var editor: Editor
-    private lateinit var document: Document
-    private var filePath: String = ""
-    private var isButtonHighlightActive = true
 
     fun init(): PluginUI {
         plugin.setUI(this)
@@ -112,7 +107,7 @@ class PluginUI(
                             if (isStarted) {
                                 Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
                                 plugin.toggleTracking()
-                                monitoringOperations(document, editor, filePath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
+                                monitoringOperations(document, editor, fileOnFocusPath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
                                 isButtonHighlightActive = false
                             } else {
                                 Messages.showErrorDialog(Config.NEUROSKY_NOT_WORKING_MESSAGE, Config.NEUROSKY_NOT_WORKING_TITLE)
@@ -123,17 +118,20 @@ class PluginUI(
                         if(comprehensionModeIsTracking) {
                             stopComprehensionModeTracking()
                         } else {
-                            attentionList?.clear()
-                            Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
-                            val isStarted: Boolean = neuroSkyAttention.waitToStart()
+                            if(openFaceOutputFolderPath == "" || questionsFileComprehensionPath == "") {
+                                Messages.showWarningDialog(Config.ERROR_SET_SETTINGS_MESSAGE, Config.ERROR_SET_SETTINGS_TITLE)
+                            } else {attentionList?.clear()
+                                Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
+                                val isStarted: Boolean = neuroSkyAttention.waitToStart()
 
-                            if (isStarted) {
-                                Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
-                                comprehensionModeIsTracking = true
-                                monitoringOperations(document, editor, filePath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
-                                isButtonHighlightActive = false
-                            } else {
-                                Messages.showErrorDialog(Config.NEUROSKY_NOT_WORKING_MESSAGE, Config.NEUROSKY_NOT_WORKING_TITLE)
+                                if (isStarted) {
+                                    Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
+                                    comprehensionModeIsTracking = true
+                                    monitoringOperations(document, editor, fileOnFocusPath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
+                                    isButtonHighlightActive = false
+                                } else {
+                                    Messages.showErrorDialog(Config.NEUROSKY_NOT_WORKING_MESSAGE, Config.NEUROSKY_NOT_WORKING_TITLE)
+                                }
                             }
                         }
                     }
@@ -182,12 +180,11 @@ class PluginUI(
     }
 
     private fun stopComprehensionModeTracking() {
-        Messages.showInfoMessage(Config.TRACKER_STOPPING_MESSAGE, Config.STOPPING_TITLE)
         comprehensionModeIsTracking = false
         isButtonHighlightActive = true
         Messages.showInfoMessage(Config.DATA_PROCESSING_MESSAGE, Config.WAITING_TITLE)
         Thread.sleep(Config.SLEEP_BEFORE_PROCESSING.toLong())
-        monitoringOperations(document, editor, filePath, Config.CREATE_COMPREHENSION_MODE_DATASET_OPERATION)
+        monitoringOperations(document, editor, fileOnFocusPath, Config.CREATE_COMPREHENSION_MODE_DATASET_OPERATION)
     }
 
     private fun registerButtonHighlightLines(parentDisposable: Disposable) {
@@ -201,14 +198,14 @@ class PluginUI(
                             Messages.showInfoMessage(Config.DATA_PROCESSING_MESSAGE, Config.WAITING_TITLE)
                             Thread.sleep(Config.SLEEP_BEFORE_PROCESSING.toLong())
 
-                            val createOperation = monitoringOperations(document, editor, filePath, Config.CREATE_CODING_MODE_DATASET_OPERATION)
+                            val createOperation = monitoringOperations(document, editor, fileOnFocusPath, Config.CREATE_CODING_MODE_DATASET_OPERATION)
 
                             if(createOperation == Config.NULL_CODE) {
                                 isButtonHighlightActive = false
                                 Messages.showWarningDialog(Config.NO_TRACKING_ACTIVITY_MESSAGE, Config.NO_TRACKING_ACTIVITY_TITLE)
                             } else {
                                 isButtonHighlightActive = true
-                                val highlightOperation = monitoringOperations(document, editor, filePath, Config.HIGHLIGHT_LINES_OPERATION)
+                                val highlightOperation = monitoringOperations(document, editor, fileOnFocusPath, Config.HIGHLIGHT_LINES_OPERATION)
 
                                 if(highlightOperation == Config.NULL_CODE)
                                     Messages.showErrorDialog(Config.NO_TRACKING_ACTIVITY_MESSAGE, Config.NO_TRACKING_ACTIVITY_TITLE)
@@ -218,7 +215,7 @@ class PluginUI(
                             }
                         }
                         else if(!state.codingModeIsTracking && !isButtonHighlightActive) {
-                            val op = monitoringOperations(document, editor, filePath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
+                            val op = monitoringOperations(document, editor, fileOnFocusPath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
 
                             if(op == Config.NULL_CODE)
                                 Messages.showErrorDialog(Config.NO_TRACKING_ACTIVITY_MESSAGE, Config.NO_TRACKING_ACTIVITY_TITLE)
@@ -279,7 +276,7 @@ class PluginUI(
         val buttonSettings = object: AnAction("Settings"), DumbAware {
             override fun actionPerformed(event: AnActionEvent) {
                 if(!state.codingModeIsTracking && !comprehensionModeIsTracking)
-                    setOpenFaceOutputFolderAndMode()
+                    setSettings()
             }
             override fun update(event: AnActionEvent) {
                 event.presentation.icon = IconLoader.getIcon("AllIcons.General.Settings")
@@ -289,19 +286,35 @@ class PluginUI(
             "Settings", parentDisposable, buttonSettings)
     }
 
-    private fun setOpenFaceOutputFolderAndMode() {
-        val checked = mode != Config.CODING_MODE
+    private fun setSettings() {
+        val ofFolderPathField = JTextField()
+        val questionsFilePathField = JTextField()
+        val checkBox = JCheckBox()
 
-        val settings = Messages.showInputDialogWithCheckBox(
-            Config.SETTINGS_MESSAGE, Config.SETTINGS_TITLE, Config.COMPREHENSION_MODE,
-            checked, true, Messages.getInformationIcon(), openFaceOutputFolderPath, null)
+        ofFolderPathField.text = openFaceOutputFolderPath
+        questionsFilePathField.text = questionsFileComprehensionPath
+        checkBox.isSelected = mode != Config.CODING_MODE
 
-        try {
-            openFaceOutputFolderPath = settings.getFirst().toString()
-            mode = if(settings.getSecond() == true) {
+        val inputFields = arrayOf<Any>(
+            Config.SETTINGS_OF_FOLDER_MESSAGE, ofFolderPathField,
+            Config.SETTINGS_QUESTIONS_FILE_MESSAGE, questionsFilePathField,
+            Config.SETTINGS_CHECKBOX_MESSAGE, checkBox
+        )
+
+        val settings = JOptionPane.showConfirmDialog(
+            null,
+            inputFields,
+            Config.SETTINGS_TITLE,
+            JOptionPane.OK_CANCEL_OPTION
+        )
+
+        if (settings == JOptionPane.OK_OPTION) {
+            openFaceOutputFolderPath = ofFolderPathField.text.toString()
+            questionsFileComprehensionPath = questionsFilePathField.text.toString()
+            mode = if(checkBox.isSelected) {
                 Config.COMPREHENSION_MODE
             } else Config.CODING_MODE
-        } catch (ignored: Exception) { }
+        }
     }
 
     private fun checkProjectOrFile(event: AnActionEvent): Int {
@@ -320,9 +333,9 @@ class PluginUI(
                 if (psiFile == null) {
                     Config.NULL_CODE
                 } else {
-                    this.editor = selectedEditor
-                    this.document = selectedDocument
-                    this.filePath = psiFile.originalFile.virtualFile.path
+                    editor = selectedEditor
+                    document = selectedDocument
+                    fileOnFocusPath = psiFile.originalFile.virtualFile.path
                     Config.OK_CODE
                 }
             }
@@ -483,22 +496,50 @@ class PluginUI(
     }
 
     companion object {
+        private lateinit var editor: Editor
+        private lateinit var document: Document
+        private var fileOnFocusPath: String = ""
+        private var isButtonHighlightActive = true
+
         private var comprehensionModeIsTracking = false
         private var checkIfFocusIsOnFile = Config.NULL_CODE
         private var openFaceOutputFolderPath: String = ""
         private var mode: String = Config.CODING_MODE
+        private var questionsFileComprehensionPath = ""
 
         var state = Plugin.State.defaultValue
         val neuroSkyAttention = NeuroSkyAttention()
         var attentionList: MutableList<Array<String>>? = null
         var attentionIndicator: Int = 0
 
+        private val popupQuestions = ProcessPopupQuestions()
+
+        /** Return ArrayList response:
+         * the first position contains question proposed by the popup,
+         * the second position contains response given by the user
+        */
         @YesNoResult
-        fun showCheckAttentionDialog(): Int {
-            return JOptionPane.showConfirmDialog(null,
-                Config.CHECK_ATTENTION_DIALOG_MESSAGE,
-                Config.CHECK_ATTENTION_DIALOG_TITLE,
-                JOptionPane.YES_NO_OPTION)
+        fun showCheckAttentionDialog(): ArrayList<String> {
+            val response = ArrayList<String>()
+            val line: Int = this.editor.caretModel.logicalPosition.line + 1
+            val check: Boolean = popupQuestions.checkQuestionExists(questionsFileComprehensionPath, fileOnFocusPath, line)
+
+            return if (check) {
+                val question: String = popupQuestions.getQuestion()
+                val answers = popupQuestions.getAnswers()
+                val list: JList<*> = JList<Any?>(answers)
+
+                JOptionPane.showMessageDialog(
+                    null, list, question, JOptionPane.PLAIN_MESSAGE
+                )
+                response.add(question)
+                response.add(list.selectedValue.toString())
+                response
+            } else {
+                response.add("")
+                response.add("")
+                response
+            }
         }
     }
 
@@ -518,13 +559,14 @@ class PluginUI(
                 attentionIndicator = attention /** update attention indicator */
 
                 val dateTimeUtils = plugin.utils.DateTimeUtils()
-                var popupResponse = ""
 
                 if(state.codingModeIsTracking) {
                     list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString()))
                     attentionList = list
                 }
 
+                var question = ""
+                var userAnswer = ""
                 var saveBuffer = ""
                 var saveNewStandardDev = ""
                 var saveOldStandardDev = ""
@@ -534,30 +576,28 @@ class PluginUI(
                         saveBuffer = buffer.toString()
                         val avg = math.avg(buffer)
                         newStandardDev = math.standardDeviation(buffer, avg)
-                        val check = neuroSkyAttention.isAttentionDropped(newStandardDev, oldStandardDev)
+                        val isAttentionDropped = neuroSkyAttention.isAttentionDropped(newStandardDev, oldStandardDev)
 
                         saveNewStandardDev = (newStandardDev*newStandardDev).toString() + "(" + newStandardDev.toString() + ")"
                         saveOldStandardDev = (oldStandardDev*oldStandardDev).toString() + "(" + oldStandardDev.toString() + ")"
 
-                        if (check) {
-                            val response = showCheckAttentionDialog()
-                            popupResponse = if(response == JOptionPane.YES_OPTION) {
-                                "Yes"
-                            } else {
-                                "No";
-                            }
+                        if (isAttentionDropped) {
+                            val popup = showCheckAttentionDialog()
+                            question = popup[Config.POPUP_QUESTION_INDEX]
+                            userAnswer = popup[Config.POPUP_USER_ANSWER_INDEX]
                             buffer.clear()
                         }
                         else {
-                            popupResponse = ""
+                            question = ""
+                            userAnswer = ""
                             saveBuffer = ""
                             saveNewStandardDev = ""
                             saveOldStandardDev = ""
                         }
                         oldStandardDev = math.standardDeviation(buffer, avg)
                     }
-                    list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString(), popupResponse,
-                        saveBuffer, saveNewStandardDev, saveOldStandardDev))
+                    list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString(), question,
+                        userAnswer, saveBuffer, saveNewStandardDev, saveOldStandardDev))
                     attentionList = list
 
                     neuroSkyAttention.updateBuffer(buffer, attention)

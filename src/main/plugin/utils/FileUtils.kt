@@ -5,6 +5,8 @@ import com.opencsv.CSVWriter
 import com.opencsv.exceptions.CsvException
 import org.apache.commons.io.filefilter.WildcardFileFilter
 import java.io.*
+import java.nio.file.Files
+import java.nio.file.Paths
 
 
 class FileUtils {
@@ -22,6 +24,16 @@ class FileUtils {
             e.printStackTrace()
             return null
         }
+    }
+
+    fun readFileContent(filePath: String): String {
+        val file = File(filePath)
+        val content: String = try {
+            String(Files.readAllBytes(Paths.get(file.toURI())))
+        } catch (e: IOException) {
+            ""
+        }
+        return content
     }
 
     fun writeFile(filepath: String?, list: MutableList<Array<String>>, append: Boolean) {

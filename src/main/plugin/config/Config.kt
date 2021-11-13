@@ -100,10 +100,11 @@ class Config {
 
         const val NEUROSKY_TIMESTAMP = 0
         const val NEUROSKY_ATTENTION = 1
-        const val NEW_POPUP_RESPONSE = 2
-        const val BUFFER = 3
-        const val NEW_VARIANCE = 4
-        const val OLD_VARIANCE = 5
+        const val POPUP_QUESTION = 2
+        const val POPUP_USER_ANSWER = 3
+        const val BUFFER = 4
+        const val NEW_VARIANCE = 5
+        const val OLD_VARIANCE = 6
 
         const val BUFFER_THRESHOLD = 5
         const val ATTENTION_THRESHOLD = 3
@@ -127,16 +128,31 @@ class Config {
         const val NEUROSKY_NOT_WORKING_TITLE = "NeuroSky MindWave headset Not Working!"
         const val NEUROSKY_NOT_WORKING_MESSAGE = "Put on the NeuroSky MindWave headset and check that it is on!"
         const val DATA_PROCESSING_MESSAGE = "Data processing in progress... "
-        const val SETTINGS_TITLE = "OpenFace Output Folder Path (e.g. C:\\Users\\OtherFolders\\FolderWithCsvFile)"
-        const val SETTINGS_MESSAGE = "Set the OpenFace output folder path and select the comprehension or coding mode"
+        const val ERROR_SET_SETTINGS_TITLE = "Warning!"
+        const val ERROR_SET_SETTINGS_MESSAGE = "Set the OpenFace output folder path and the questions file path in the settings."
 
-        const val CHECK_ATTENTION_DIALOG_TITLE = "Attention Check"
-        const val CHECK_ATTENTION_DIALOG_MESSAGE = "Did you get distracted?"
+        const val SETTINGS_TITLE = "Settings"
+        const val SETTINGS_OF_FOLDER_MESSAGE = "Set the OpenFace Output Folder Path (e.g. C:\\Users\\OtherFolders\\FolderWithCsvFile):"
+        const val SETTINGS_QUESTIONS_FILE_MESSAGE = "Set the questions File Path (e.g. C:\\Users\\OtherFolders\\QuestionsFile.json):"
+        const val SETTINGS_CHECKBOX_MESSAGE = "Check for Comprehension Mode or uncheck for Coding Mode:"
 
         const val CODING_MODE: String = "Coding Mode"
         const val COMPREHENSION_MODE: String = "Comprehension Mode"
 
-        /** DateTime*/
+        /** DateTime */
         const val DEFAULT_DATE = "1900-01-01 00:00:00.000"
+
+        /** Popup Json key */
+        const val TASKS = "tasks"
+        const val TASK = "task"
+        const val TASK_QUESTIONS = "taskQuestions"
+        const val FROM_LINE = "fromLine"
+        const val TO_LINE = "toLine"
+        const val QUESTIONS = "questions"
+        const val ANSWERS = "answers"
+        const val QUESTION = "question"
+
+        const val POPUP_QUESTION_INDEX = 0
+        const val POPUP_USER_ANSWER_INDEX = 1
     }
 }
