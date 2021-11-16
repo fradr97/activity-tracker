@@ -1,15 +1,11 @@
 package plugin.locAlgorithm.codingMode
 
 import plugin.activityTracker.activityTrackerOutput.ProcessActivityTrackerOutput
+import plugin.config.Config
 import plugin.openFaceAUs.ProcessOpenFaceOutput
 import plugin.utils.DateTimeUtils
 import plugin.utils.FileUtils
 import plugin.utils.StringUtils
-import com.intellij.openapi.editor.Document
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.util.TextRange
-import kotlin.math.roundToInt
-import plugin.config.Config
 
 
 class ProcessCodingModeOutput {
@@ -46,7 +42,7 @@ class ProcessCodingModeOutput {
         val list: MutableList<Array<String>> = java.util.ArrayList()
         val headers = arrayOf(
             "Timestamp", "EventType", "EventData", "ModifiedFile", "Line", "Column", "Instruction",
-            "LinesNumber", "Attention", "AU01", "AU02", "AU04", "AU05", "AU06", "AU07", "AU09",
+            "fileLinesNumber", "Attention", "lineOccurrences", "AU01", "AU02", "AU04", "AU05", "AU06", "AU07", "AU09",
             "AU10", "AU12", "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45"
         )
         list.add(headers)
@@ -209,44 +205,6 @@ class ProcessCodingModeOutput {
         }
     }
 
-    fun getHighlightedAttentionLines(document: Document, editor: Editor, fileOnFocus: String): Int {
-        val fileUtils = FileUtils()
-        val attentionValues = fileUtils.parseCSVFile(Config.FINAL_CODING_MODE_DATASET_FILENAME) ?: return Config.NULL_CODE
-
-        val lineHighlighter = LineHighlighter()
-        for (i in 0 until document.lineCount) {
-            val editorLineNumber = i + 1
-            val range = TextRange(
-                editor.document.getLineStartOffset(i),
-                editor.document.getLineEndOffset(i)
-            )
-            if (editor.document.getText(range).trim { it <= ' ' } != "") {
-                val meanAttentionLine = getMeanLineAttention(attentionValues, fileOnFocus, editorLineNumber)
-                if (meanAttentionLine >= 0) lineHighlighter.addLineHighlighter(
-                    editor,
-                    editorLineNumber,
-                    meanAttentionLine
-                )
-            }
-        }
-        return Config.OK_CODE
-    }
-
-    private fun getMeanLineAttention(list: List<Array<String>>, fileOnFocus: String, line: Int): Int {
-        var sum = 0
-        var occurrences = 0
-        for (row in list) {
-            if (fileOnFocus == row[Config.FILENAME] &&
-                line == row[Config.LINE].toInt() &&
-                row[Config.ATTENTION] != Config.NO_ATTENTION_VALUE_OBTAINED.toString()  /* excludes any errors (e.g. headset off) */
-            ) {
-                sum += row[Config.ATTENTION].toInt()
-                occurrences++
-            }
-        }
-        return if (occurrences == 0) Config.NULL_CODE else (sum / occurrences).toDouble().roundToInt()
-    }
-
     private fun mergeAllValues(attentionList: MutableList<Array<String>>, openFaceAUsList: MutableList<Array<String>>) {
         val dateTimeUtils = DateTimeUtils()
 
@@ -318,6 +276,7 @@ class ProcessCodingModeOutput {
                 codingModeDataset[i][Config.LINE_INSTRUCTION],
                 codingModeDataset[i][Config.CURRENT_LINE_COUNT],
                 attention,
+                countLineOccurrence(i, codingModeDataset[i][Config.LINE].toInt()).toString(),
                 au01,
                 au02,
                 au04,
@@ -356,5 +315,15 @@ class ProcessCodingModeOutput {
             au26 = defaultAUsDensity
             au45 = defaultAUsDensity
         }
+    }
+
+    private fun countLineOccurrence(index: Int, line: Int): Int {
+        var count = 0
+        for (i in 0 until index) {
+            if (codingModeDataset[i][Config.LINE].toInt() == line) {
+                count++
+            }
+        }
+        return count + 1
     }
 }

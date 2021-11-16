@@ -2,7 +2,6 @@ package plugin.neuroSkyAttention
 
 import org.json.JSONObject
 import plugin.config.Config
-import java.util.ArrayList
 import kotlin.math.abs
 
 open class NeuroSkyAttention {
@@ -37,12 +36,23 @@ open class NeuroSkyAttention {
         }
     }
 
-    fun isAttentionDropped(newVarianceAttention: Int, oldVarianceAttention: Int): Boolean {
+    fun isAttentionDropped(buffer: ArrayList<Int>): Boolean {
+        var value = buffer[0]
+        for (i in 1 until buffer.size) {
+            value = if (buffer[i] <= value) buffer[i] else return false
+        }
+        val firstValue = buffer[0]
+        val lastValue = buffer[buffer.size - 1]
+        val diff = firstValue - lastValue
+        return diff <= Config.ATTENTION_THRESHOLD
+    }
+
+    /*fun isAttentionDropped(newVarianceAttention: Int, oldVarianceAttention: Int): Boolean {
         val diff = newVarianceAttention - oldVarianceAttention
         return if (diff < 0) {
             abs(diff) > Config.ATTENTION_THRESHOLD
         } else false
-    }
+    }*/
 
     fun updateBuffer(buffer: ArrayList<Int>, element: Int) {
         if (buffer.size == Config.BUFFER_THRESHOLD) buffer.removeAt(0)

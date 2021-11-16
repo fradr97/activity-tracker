@@ -4,6 +4,7 @@ import com.intellij.openapi.application.PathManager
 
 class Config {
     companion object {
+        /** CODES */
         const val OK_CODE = 0
         const val NULL_CODE = -1
 
@@ -106,10 +107,11 @@ class Config {
         const val NEW_VARIANCE = 5
         const val OLD_VARIANCE = 6
 
+        /** PARAMETERS RELATING TO THE LOSS OF ATTENTION */
         const val BUFFER_THRESHOLD = 5
-        const val ATTENTION_THRESHOLD = 3
+        const val ATTENTION_THRESHOLD = 50
 
-        /** PLUGIN-UI VARIABLES */
+        /** PLUGIN OPERATIONS */
         const val CREATE_CODING_MODE_DATASET_OPERATION = 0
         const val CREATE_COMPREHENSION_MODE_DATASET_OPERATION = 1
         const val HIGHLIGHT_LINES_OPERATION = 2
@@ -117,6 +119,7 @@ class Config {
 
         const val SLEEP_BEFORE_PROCESSING = 5000
 
+        /** PLUGIN-UI TITLES AND MESSAGES */
         const val NO_TRACKING_ACTIVITY_TITLE = "Tracker File Empty!"
         const val NO_TRACKING_ACTIVITY_MESSAGE = "No tracking activity detected for this file."
         const val WAITING_TITLE = "Please wait!"
@@ -131,18 +134,31 @@ class Config {
         const val ERROR_SET_SETTINGS_TITLE = "Warning!"
         const val ERROR_SET_SETTINGS_MESSAGE = "Set the OpenFace output folder path and the questions file path in the settings."
 
+        const val HIGHLIGHT_OPTIONS_TITLE = "Highlight options"
+        const val ARITHMETIC_MEAN_OPTION = "Arithmetic mean of the attention values"
+        const val EXPONENTIAL_MEAN_OPTION = "Exponential mean of the attention values"
+        const val LAST_ATTENTION_VALUE_OPTION = "Last attention value"
+
         const val SETTINGS_TITLE = "Settings"
         const val SETTINGS_OF_FOLDER_MESSAGE = "Set the OpenFace Output Folder Path (e.g. C:\\Users\\OtherFolders\\FolderWithCsvFile):"
         const val SETTINGS_QUESTIONS_FILE_MESSAGE = "Set the questions File Path (e.g. C:\\Users\\OtherFolders\\QuestionsFile.json):"
         const val SETTINGS_CHECKBOX_MESSAGE = "Check for Comprehension Mode or uncheck for Coding Mode:"
 
+        const val NO_POPUP_RESPONSE = "No response!"
+
+        /** THE TWO MODES OF THE PLUGIN */
         const val CODING_MODE: String = "Coding Mode"
         const val COMPREHENSION_MODE: String = "Comprehension Mode"
+
+        /** CODING MODE HIGHLIGHT OPTIONS */
+        const val CODING_MODE_ARITHMETIC_AVG_OPTION = 0
+        const val CODING_MODE_EXPONENTIAL_AVG_OPTION = 1
+        const val CODING_MODE_LAST_ATTENTION_OPTION = 2
 
         /** DateTime */
         const val DEFAULT_DATE = "1900-01-01 00:00:00.000"
 
-        /** Popup Json key */
+        /** Popup Json keys */
         const val TASKS = "tasks"
         const val TASK = "task"
         const val TASK_QUESTIONS = "taskQuestions"

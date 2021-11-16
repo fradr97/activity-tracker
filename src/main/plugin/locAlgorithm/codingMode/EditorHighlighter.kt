@@ -8,7 +8,7 @@ import plugin.config.Config
 import java.awt.Color
 import java.awt.Font
 
-class LineHighlighter {
+class EditorHighlighter {
     fun addLineHighlighter(editor: Editor, line: Int, attentionValue: Int) {
         val color: Color = if (attentionValue <= Config.MIN_ATTENTION) Color(255, 0, 0)
         else if (attentionValue <= Config.LOW_ATTENTION) Color(255, 90, 0)
@@ -22,5 +22,11 @@ class LineHighlighter {
 
     fun removeAllHighlighter(editor: Editor) {
         editor.markupModel.removeAllHighlighters()
+    }
+
+    fun hideLine(editor: Editor, line: Int) {
+        val color = Color(0, 0, 0)
+        val textAttributes = TextAttributes(color, color, null, EffectType.LINE_UNDERSCORE, Font.PLAIN)
+        editor.markupModel.addLineHighlighter(line - 1, HighlighterLayer.CARET_ROW, textAttributes)
     }
 }
