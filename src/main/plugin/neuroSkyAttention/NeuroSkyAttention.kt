@@ -2,7 +2,6 @@ package plugin.neuroSkyAttention
 
 import org.json.JSONObject
 import plugin.config.Config
-import kotlin.math.abs
 
 open class NeuroSkyAttention {
     private val thinkGearSocketClient: ThinkGearSocketClient = ThinkGearSocketClient()
@@ -64,7 +63,7 @@ open class NeuroSkyAttention {
     }
 
     fun error(): Boolean {
-        if(this.error >= Config.NEUROSKY_ERROR_ATTEMPTS) {
+        if(this.error >= Config.HEADSET_ERROR_ATTEMPTS) {
             attention = Config.NO_ATTENTION_VALUE_OBTAINED
             return true
         }

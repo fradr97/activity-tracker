@@ -233,11 +233,11 @@ class ProcessCodingModeOutput {
             val pluginDate = dateTimeUtils.getDateFromString(codingModeDataset[i][Config.TIMESTAMP])
 
             for (j in attentionList.indices) {
-                val attentionDate = dateTimeUtils.getDateFromString(attentionList[j][Config.NEUROSKY_TIMESTAMP])
+                val attentionDate = dateTimeUtils.getDateFromString(attentionList[j][Config.HEADSET_TIMESTAMP])
                 val sameDates = dateTimeUtils.checkSameDates(pluginDate, attentionDate)
 
                 if (sameDates && attentionDate!!.before(pluginDate)) {
-                    attention = attentionList[j][Config.NEUROSKY_ATTENTION]
+                    attention = attentionList[j][Config.HEADSET_ATTENTION]
                 }
             }
             for (k in 1 until openFaceAUsList.size) {

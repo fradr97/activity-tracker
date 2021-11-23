@@ -84,7 +84,7 @@ class Config {
         const val OF_AU26 = 16
         const val OF_AU45 = 17
 
-        /** NEURO-SKY VALUES */
+        /** HEADSET VALUES (NeuroSky)*/
         const val DEFAULT_HOST = "127.0.0.1"
         const val DEFAULT_PORT = 13854
 
@@ -97,10 +97,10 @@ class Config {
         const val MAX_ATTENTION = 100
 
         /** INDEXES FOR THE (OLD) ATTENTION LIST */
-        const val NEUROSKY_ERROR_ATTEMPTS = 3
+        const val HEADSET_ERROR_ATTEMPTS = 3
 
-        const val NEUROSKY_TIMESTAMP = 0
-        const val NEUROSKY_ATTENTION = 1
+        const val HEADSET_TIMESTAMP = 0
+        const val HEADSET_ATTENTION = 1
         const val POPUP_QUESTION = 2
         const val POPUP_USER_ANSWER = 3
         const val BUFFER = 4
@@ -123,13 +123,13 @@ class Config {
         const val NO_TRACKING_ACTIVITY_TITLE = "Tracker File Empty!"
         const val NO_TRACKING_ACTIVITY_MESSAGE = "No tracking activity detected for this file."
         const val WAITING_TITLE = "Please wait!"
-        const val WAITING_NEUROSKY_MESSAGE = "Waiting NeuroSky MindWave headset... "
+        const val WAITING_HEADSET_MESSAGE = "Waiting headset... "
         const val RUNNING_TITLE = "Running!"
         const val TRACKER_RUNNING_MESSAGE = "The tracker is running... "
         const val STOPPING_TITLE = "Stopping!"
         const val TRACKER_STOPPING_MESSAGE = "The tracker is stopping..."
-        const val NEUROSKY_NOT_WORKING_TITLE = "NeuroSky MindWave headset Not Working!"
-        const val NEUROSKY_NOT_WORKING_MESSAGE = "Put on the NeuroSky MindWave headset and check that it is on!"
+        const val HEADSET_NOT_WORKING_TITLE = "Headset Not Working!"
+        const val HEADSET_NOT_WORKING_MESSAGE = "Put on the headset and check that it is on!"
         const val DATA_PROCESSING_MESSAGE = "Data processing in progress... "
         const val ERROR_SET_SETTINGS_TITLE = "Warning!"
         const val ERROR_SET_SETTINGS_MESSAGE = "Set the OpenFace output folder path and the questions file path in the settings."

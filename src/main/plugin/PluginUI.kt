@@ -102,7 +102,7 @@ class PluginUI(
                             stopCodingModeTracking()
                         } else {
                             attentionList?.clear()
-                            Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
+                            Messages.showInfoMessage(Config.WAITING_HEADSET_MESSAGE, Config.WAITING_TITLE)
                             val isStarted: Boolean = neuroSkyAttention.waitToStart()
 
                             if (isStarted) {
@@ -111,7 +111,7 @@ class PluginUI(
                                 monitoringOperations(document, editor, fileOnFocusPath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
                                 isButtonHighlightActive = false
                             } else {
-                                Messages.showErrorDialog(Config.NEUROSKY_NOT_WORKING_MESSAGE, Config.NEUROSKY_NOT_WORKING_TITLE)
+                                Messages.showErrorDialog(Config.HEADSET_NOT_WORKING_MESSAGE, Config.HEADSET_NOT_WORKING_TITLE)
                             }
                         }
                     }
@@ -124,7 +124,7 @@ class PluginUI(
                             if(openFaceOutputFolderPath == "" || questionsFileComprehensionPath == "") {
                                 Messages.showWarningDialog(Config.ERROR_SET_SETTINGS_MESSAGE, Config.ERROR_SET_SETTINGS_TITLE)
                             } else {
-                                Messages.showInfoMessage(Config.WAITING_NEUROSKY_MESSAGE, Config.WAITING_TITLE)
+                                Messages.showInfoMessage(Config.WAITING_HEADSET_MESSAGE, Config.WAITING_TITLE)
                                 val isStarted: Boolean = neuroSkyAttention.waitToStart()
 
                                 if (isStarted) {
@@ -133,7 +133,7 @@ class PluginUI(
                                     monitoringOperations(document, editor, fileOnFocusPath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
                                     isButtonHighlightActive = false
                                 } else {
-                                    Messages.showErrorDialog(Config.NEUROSKY_NOT_WORKING_MESSAGE, Config.NEUROSKY_NOT_WORKING_TITLE)
+                                    Messages.showErrorDialog(Config.HEADSET_NOT_WORKING_MESSAGE, Config.HEADSET_NOT_WORKING_TITLE)
                                 }
                             }
                         }

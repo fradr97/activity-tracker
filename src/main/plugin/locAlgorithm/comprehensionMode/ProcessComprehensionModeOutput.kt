@@ -71,11 +71,11 @@ class ProcessComprehensionModeOutput {
                 stringUtils.replaceLastOccurrence(openFaceAUsList[i][Config.OF_TIMESTAMP], ":", "."))
 
             for (j in attentionPopupList.indices) {
-                val attentionDate = dateTimeUtils.getDateFromString(attentionPopupList[j][Config.NEUROSKY_TIMESTAMP])
+                val attentionDate = dateTimeUtils.getDateFromString(attentionPopupList[j][Config.HEADSET_TIMESTAMP])
                 val sameDates = dateTimeUtils.checkSameDates(ofDate, attentionDate)
 
                 if (sameDates && attentionDate!!.before(ofDate)) {
-                    attention = attentionPopupList[j][Config.NEUROSKY_ATTENTION]
+                    attention = attentionPopupList[j][Config.HEADSET_ATTENTION]
 
                     val index = indexToPopupMatch(openFaceAUsList, attentionDate)
                     if(i == index) {
