@@ -5,6 +5,7 @@ import org.json.JSONObject
 import plugin.config.Config
 import plugin.utils.FileUtils
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 class ProcessPopupQuestions {
@@ -82,6 +83,23 @@ class ProcessPopupQuestions {
         return Config.NULL_CODE
     }
 
+    fun getAllCodeRange(filePath: String, javaClass: String): MutableList<Array<Int>> {
+        val ranges: MutableList<Array<Int>> = java.util.ArrayList()
+        val taskIndex = getTaskIndex(filePath, javaClass)
+        taskQuestions = tasks.getJSONObject(taskIndex).getJSONArray(Config.TASK_QUESTIONS)
+
+        if (taskIndex != Config.NULL_CODE) {
+            for (j in 0 until taskQuestions.length()) {
+                val from = taskQuestions.getJSONObject(j).getInt(Config.FROM_LINE)
+                val to = taskQuestions.getJSONObject(j).getInt(Config.TO_LINE)
+
+                val range = arrayOf(from, to)
+                ranges.add(range)
+            }
+        }
+        return ranges
+    }
+
     private fun getQuestionAnswersIndex(taskQuestionIndex: Int): Int {
         return try {
             questions = taskQuestions.getJSONObject(taskQuestionIndex).getJSONArray(Config.QUESTIONS)
@@ -114,7 +132,7 @@ class ProcessPopupQuestions {
         alreadyAsked.add(index)
     }
 
-    private fun numIsInRange(num: Int, from: Int, to: Int): Boolean {
+    fun numIsInRange(num: Int, from: Int, to: Int): Boolean {
         return num in from..to
     }
 }

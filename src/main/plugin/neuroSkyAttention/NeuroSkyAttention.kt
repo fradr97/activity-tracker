@@ -9,7 +9,7 @@ open class NeuroSkyAttention {
     private var error = 0
 
     init {
-        thinkGearSocketClient.connect()
+        //thinkGearSocketClient.connect()
     }
 
     fun waitToStart(): Boolean {

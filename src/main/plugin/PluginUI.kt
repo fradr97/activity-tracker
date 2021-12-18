@@ -64,14 +64,14 @@ class PluginUI(
         registerPopup(parentDisposable)
         registerButtonStartStopMonitoring(parentDisposable)
         registerButtonHighlightLines(parentDisposable)
-        registerAttentionIndicator(parentDisposable)
+        //registerAttentionIndicator(parentDisposable)
         registerSettings(parentDisposable)
         eventAnalyzer.runner = { task ->
             runInBackground("Analyzing activity log", task = { task() })
         }
         state.codingModeIsTracking = false
-        val attentionThread = Thread(AttentionThread())
-        attentionThread.start()
+        //val attentionThread = Thread(AttentionThread())
+        //attentionThread.start()
 
         return this
     }
@@ -124,17 +124,13 @@ class PluginUI(
                             if(openFaceOutputFolderPath == "" || questionsFileComprehensionPath == "") {
                                 Messages.showWarningDialog(Config.ERROR_SET_SETTINGS_MESSAGE, Config.ERROR_SET_SETTINGS_TITLE)
                             } else {
-                                Messages.showInfoMessage(Config.WAITING_HEADSET_MESSAGE, Config.WAITING_TITLE)
-                                val isStarted: Boolean = neuroSkyAttention.waitToStart()
+                                Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
+                                comprehensionModeIsTracking = true
+                                monitoringOperations(document, editor, fileOnFocusPath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
+                                isButtonHighlightActive = false
 
-                                if (isStarted) {
-                                    Messages.showInfoMessage(Config.TRACKER_RUNNING_MESSAGE, Config.RUNNING_TITLE)
-                                    comprehensionModeIsTracking = true
-                                    monitoringOperations(document, editor, fileOnFocusPath, Config.REMOVE_HIGHLIGHTED_LINES_OPERATION)
-                                    isButtonHighlightActive = false
-                                } else {
-                                    Messages.showErrorDialog(Config.HEADSET_NOT_WORKING_MESSAGE, Config.HEADSET_NOT_WORKING_TITLE)
-                                }
+                                val popupThread = Thread(ShowPopupThread())
+                                popupThread.start()
                             }
                         }
                     }
@@ -154,14 +150,11 @@ class PluginUI(
                 } else {
                     /** If there is a problem getting attention values
                      * (e.g. headset off during tracking) */
-                    if(neuroSkyAttention.error()) {
+                    /*if(neuroSkyAttention.error()) {
                         if(state.codingModeIsTracking) {
                             stopCodingModeTracking()
                         }
-                        if(comprehensionModeIsTracking) {
-                            stopComprehensionModeTracking()
-                        }
-                    }
+                    }*/
 
                     if(state.codingModeIsTracking || comprehensionModeIsTracking) {
                         IconLoader.getIcon("AllIcons.Actions.Pause")
@@ -419,7 +412,8 @@ class PluginUI(
             Config.CREATE_COMPREHENSION_MODE_DATASET_OPERATION -> {
                 fileUtils.writeFile(Config.ATTENTION_COMPREHENSION_MODE_DATASET_FILENAME,
                     attentionList as MutableList<Array<String>>, true)
-                return processComprehensionModeOutput.createOutputComprehensionMode(openFaceOutputFolderPath)
+                return Config.OK_CODE
+                //return processComprehensionModeOutput.createOutputComprehensionMode(openFaceOutputFolderPath)
             }
             Config.HIGHLIGHT_LINES_OPERATION -> {
                 return codingModeHighlightOptions.getHighlightedAttentionLines(document, editor, fileOnFocus, codingModeOptions)
@@ -580,14 +574,41 @@ class PluginUI(
 
         private val popupQuestions = ProcessPopupQuestions()
 
+        private var oldLine: Int = 0
+        private var line: Int = 0
+        /** Used to check if the cursor is in a particular code range*/
+        private var from: Int = 0
+        private var to: Int = 0
+
+        /** Check if the cursor has left a certain range of code */
+        private fun codeRangeIsChanged(): Boolean {
+            line = editor.caretModel.logicalPosition.line + 1
+            val allCodeRanges: MutableList<Array<Int>> = popupQuestions.getAllCodeRange(questionsFileComprehensionPath, fileOnFocusPath)
+            var i = 0
+            var isInRange = false
+
+            while(i < allCodeRanges.size && !isInRange) {
+                isInRange = popupQuestions.numIsInRange(line, allCodeRanges[i][0], allCodeRanges[i][1])
+
+                if(isInRange &&
+                    from != allCodeRanges[i][0] &&
+                    to != allCodeRanges[i][1]) {
+                    from = allCodeRanges[i][0]
+                    to = allCodeRanges[i][1]
+                    return true
+                }
+                i ++
+            }
+            return false
+        }
+
         /** Return ArrayList response:
          *  the first position contains question proposed by the popup,
          *  the second position contains response given by the user
          */
         @YesNoResult
-        fun showCheckAttentionDialog(): ArrayList<String> {
+        fun showCheckAttentionDialog(line: Int): ArrayList<String> {
             val response = ArrayList<String>()
-            val line: Int = this.editor.caretModel.logicalPosition.line + 1
             val check: Boolean = popupQuestions.checkQuestionExists(questionsFileComprehensionPath, fileOnFocusPath, line)
 
             return if (check) {
@@ -617,121 +638,44 @@ class PluginUI(
         }
     }
 
-    class AttentionThread : Runnable {
+    class ShowPopupThread: Runnable {
         override fun run() {
             val list: MutableList<Array<String>> = ArrayList()
-            val buffer = ArrayList<Int>()
+            var time = 0
 
-            while(neuroSkyAttention.isConnected()) {
-                neuroSkyAttention.monitorAttention()
+            while(comprehensionModeIsTracking) {
+                var question: String
+                var userAnswer: String
 
-                val attention = neuroSkyAttention.getAttentionValue()
-                attentionIndicator = attention /** update attention indicator */
+                val check = codeRangeIsChanged()
 
-                val dateTimeUtils = plugin.utils.DateTimeUtils()
+                if(!check)
+                    oldLine = line
 
-                if(state.codingModeIsTracking) {
-                    list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString()))
-                    attentionList = list
-                }
+                /** The popup will be shown when:
+                    - the cursor exits a code block;
+                    - the cursor remained in that code block for two seconds per line */
+                val cursorRemainInRangeTime = (to - from) * Config.CURSOR_REMAIN_IN_RANGE_SECONDS
 
-                var question = ""
-                var userAnswer = ""
-                var saveBuffer = ""
+                if(check && time > cursorRemainInRangeTime) {
+                    val popup = showCheckAttentionDialog(oldLine)
+                    question = popup[Config.POPUP_QUESTION_INDEX]
+                    userAnswer = popup[Config.POPUP_USER_ANSWER_INDEX]
+                    val dateTimeUtils = plugin.utils.DateTimeUtils()
 
-                if(comprehensionModeIsTracking) {
-                    if (buffer.size == Config.BUFFER_THRESHOLD) {
-                        saveBuffer = buffer.toString()
-
-                        val isAttentionDropped = neuroSkyAttention.isAttentionDropped(buffer)
-
-                        if (isAttentionDropped) {
-                            val popup = showCheckAttentionDialog()
-                            question = popup[Config.POPUP_QUESTION_INDEX]
-                            userAnswer = popup[Config.POPUP_USER_ANSWER_INDEX]
-                            buffer.clear()
-                        }
-                        else {
-                            question = ""
-                            userAnswer = ""
-                            saveBuffer = ""
-                        }
-                    }
-                    list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString(), question,
-                        userAnswer, saveBuffer))
+                    list.add(arrayOf(dateTimeUtils.getTimestamp(), question,
+                        userAnswer))
                     attentionList = list
 
-                    neuroSkyAttention.updateBuffer(buffer, attention)
-                    Thread.sleep(1000)
+                    time = 0
                 }
+
+                if(check)
+                    time = 0
+
+                time ++
+                Thread.sleep(1000)
             }
-        }
+       }
     }
-
-    /*class AttentionThread : Runnable {
-        override fun run() {
-            val list: MutableList<Array<String>> = ArrayList()
-            val math = MathUtils()
-            val buffer = ArrayList<Int>()
-
-            var newStandardDev: Int
-            var oldStandardDev = 0
-
-            while(neuroSkyAttention.isConnected()) {
-                neuroSkyAttention.monitorAttention()
-
-                val attention = neuroSkyAttention.getAttentionValue()
-                attentionIndicator = attention /** update attention indicator */
-
-                val dateTimeUtils = plugin.utils.DateTimeUtils()
-
-                if(state.codingModeIsTracking) {
-                    list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString()))
-                    attentionList = list
-                }
-
-                var question = ""
-                var userAnswer = ""
-                var saveBuffer = ""
-                var saveNewStandardDev = ""
-                var saveOldStandardDev = ""
-
-                if(comprehensionModeIsTracking) {
-                    if (buffer.size == Config.BUFFER_THRESHOLD) {
-                        saveBuffer = buffer.toString()
-                        val avg = math.avg(buffer)
-                        newStandardDev = math.standardDeviation(buffer, avg)
-                        val isAttentionDropped = neuroSkyAttention.isAttentionDropped(newStandardDev, oldStandardDev)
-
-                        saveNewStandardDev = (newStandardDev*newStandardDev).toString() + "(" + newStandardDev.toString() + ")"
-                        saveOldStandardDev = (oldStandardDev*oldStandardDev).toString() + "(" + oldStandardDev.toString() + ")"
-
-                        if (isAttentionDropped) {
-                            hideLines = true
-                            val popup = showCheckAttentionDialog()
-                            question = popup[Config.POPUP_QUESTION_INDEX]
-                            userAnswer = popup[Config.POPUP_USER_ANSWER_INDEX]
-                            buffer.clear()
-                        }
-                        else {
-                            //hideLines = false
-                            question = ""
-                            userAnswer = ""
-                            saveBuffer = ""
-                            saveNewStandardDev = ""
-                            saveOldStandardDev = ""
-                        }
-                        //hideLines = false
-                        oldStandardDev = math.standardDeviation(buffer, avg)
-                    }
-                    list.add(arrayOf(dateTimeUtils.getTimestamp(), attention.toString(), question,
-                        userAnswer, saveBuffer, saveNewStandardDev, saveOldStandardDev))
-                    attentionList = list
-
-                    neuroSkyAttention.updateBuffer(buffer, attention)
-                    Thread.sleep(1000)
-                }
-            }
-        }
-    }*/
 }

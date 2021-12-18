@@ -84,7 +84,7 @@ class Config {
         const val OF_AU26 = 16
         const val OF_AU45 = 17
 
-        /** HEADSET VALUES (NeuroSky)*/
+        /** HEADSET VALUES (NeuroSky) */
         const val DEFAULT_HOST = "127.0.0.1"
         const val DEFAULT_PORT = 13854
 
@@ -101,15 +101,14 @@ class Config {
 
         const val HEADSET_TIMESTAMP = 0
         const val HEADSET_ATTENTION = 1
-        const val POPUP_QUESTION = 2
-        const val POPUP_USER_ANSWER = 3
-        const val BUFFER = 4
-        const val NEW_VARIANCE = 5
-        const val OLD_VARIANCE = 6
+        const val POPUP_QUESTION = 1
+        const val POPUP_USER_ANSWER = 2
 
         /** PARAMETERS RELATING TO THE LOSS OF ATTENTION */
         const val BUFFER_THRESHOLD = 5
         const val ATTENTION_THRESHOLD = 50
+
+        const val CURSOR_REMAIN_IN_RANGE_SECONDS = 2
 
         /** PLUGIN OPERATIONS */
         const val CREATE_CODING_MODE_DATASET_OPERATION = 0

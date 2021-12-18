@@ -32,9 +32,8 @@ class ProcessComprehensionModeOutput {
     private fun createComprehensionModeHeaders(): List<Array<String>> {
         val list: MutableList<Array<String>> = java.util.ArrayList()
         val headers = arrayOf(
-            "Timestamp", "Attention", "AU01", "AU02", "AU04", "AU05", "AU06", "AU07", "AU09",
-            "AU10", "AU12", "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45", "Question",
-            "UserAnswer", "Buffer"
+            "Timestamp", "AU01", "AU02", "AU04", "AU05", "AU06", "AU07", "AU09", "AU10", "AU12",
+            "AU14", "AU15", "AU17", "AU20", "AU23", "AU25", "AU26", "AU45", "Question", "UserAnswer"
         )
         list.add(headers)
         return list
@@ -59,12 +58,8 @@ class ProcessComprehensionModeOutput {
         val dateTimeUtils = DateTimeUtils()
 
         val empty = ""
-        var attention = empty
         var question = empty
         var userAnswer = empty
-        var buffer = empty
-        /*var newVariance = empty
-        var oldVariance = empty*/
 
         for (i in 1 until openFaceAUsList.size) {
             val ofDate = dateTimeUtils.getDateFromString(
@@ -75,27 +70,18 @@ class ProcessComprehensionModeOutput {
                 val sameDates = dateTimeUtils.checkSameDates(ofDate, attentionDate)
 
                 if (sameDates && attentionDate!!.before(ofDate)) {
-                    attention = attentionPopupList[j][Config.HEADSET_ATTENTION]
-
                     val index = indexToPopupMatch(openFaceAUsList, attentionDate)
                     if(i == index) {
                         question = attentionPopupList[j][Config.POPUP_QUESTION]
                         userAnswer = attentionPopupList[j][Config.POPUP_USER_ANSWER]
-                        buffer = attentionPopupList[j][Config.BUFFER]
-                        /*newVariance = attentionPopupList[j][Config.NEW_VARIANCE]
-                        oldVariance = attentionPopupList[j][Config.OLD_VARIANCE]*/
                     } else {
                         question = empty
                         userAnswer = empty
-                        buffer = empty
-                        /*newVariance = empty
-                        oldVariance = empty*/
                     }
                 }
             }
             val row = arrayOf(
                 openFaceAUsList[i][Config.TIMESTAMP],
-                attention,
                 openFaceAUsList[i][Config.OF_AU01],
                 openFaceAUsList[i][Config.OF_AU02],
                 openFaceAUsList[i][Config.OF_AU04],
@@ -114,21 +100,13 @@ class ProcessComprehensionModeOutput {
                 openFaceAUsList[i][Config.OF_AU26],
                 openFaceAUsList[i][Config.OF_AU45],
                 question,
-                userAnswer,
-                buffer/*,
-                newVariance,
-                oldVariance*/
+                userAnswer
             )
 
-            if(attention != empty)
-                comprehensionModeDataset.add(row)
+            comprehensionModeDataset.add(row)
 
-            attention = empty
             question = empty
             userAnswer = empty
-            buffer = empty
-            /*newVariance = empty
-            oldVariance = empty*/
         }
     }
 }
